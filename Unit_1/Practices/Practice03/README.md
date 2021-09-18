@@ -1,54 +1,43 @@
-# Practice #01
+# Practice #03
 
-Test the Law Of Large Numbers for N random normally distributed numbers with mean = 0, stdev=1:
-
-Create an R script that will count how many of these numbers fall between -1 and 1 and divide by the total quantity of N
-
-You know that E(X) = 68.2%
-Check that Mean(Xn)->E(X) as you rerun your script while increasing N
-
-Hint:
-1. Initialize sample size
-2. Initialize counter
-3. loop for(i in rnorm(size))
-4. Check if the iterated variable falls
-5. Increase counter if the condition is true
-6. return a result <- counter / N
+1. Create a list called "list" with the elements "red", "white", "black"
+2. Add 5 more items to "list" "green", "yellow", "blue", "orange", "pearl"
+3. Bring the items from "list" "green", "yellow", "blue"
+4. Create an array of numbers in the range 1-1000 in steps of 5 by 5
+5. What are the unique elements of the list List (1,3,3,4,6,7,3,7) use conversion to sets
+6. Create a mutable map named names that contains the following
+     "José", 20, "Luis", 24, "Ana", 23, "Susana", "27"
+   6 a. Print all keys on the map
+   6 b. Add the following value to the map ("Miguel", 23)
 
 
-### 1. Initialize sample size
+### 4. Create an array of numbers in the range 1-1000 in steps of 5 by 5
 ``` r
-Numbers = 1:30
+val arr = Array.range(0, 1001, 5)
+arr(999)
 ```
 
-### 2. Initialize counter
+### 5. What are the unique elements of the list List (1,3,3,4,6,7,3,7) use conversion to sets
 ``` r
-counter = 1
+val Lista = List(1,3,3,4,6,7,3,7)
+Lista.toSet
+
+scala> Lista.toSet
+res1: scala.collection.immutable.Set[Int] = Set(1, 6, 7, 3, 4)
 ```
 
-### 3. loop for(i in rnorm(size))
+### 6. Create a mutable map named names that contains the following "José", 20, "Luis", 24, "Ana", 23, "Susana", "27"
 ``` r
-for(i in rnorm(Numbers))
-  {
-  print(i)
-  }
+val mutmap = collection.mutable.Map(( "Jose", 20), ("Luis", 24), ("Ana", 23), ("Susana", "27"))
+```
+### 6 a. Print all keys on the map
+``` r
+scala> mutmap.keys
+res0: Iterable[String] = Set(Susana, Ana, Luis, Jose)
 ```
 
-### 4. Check if the iterated variable falls
+### 6 b. Add the following value to the map ("Miguel", 23)
 ``` r
-  if(i >= -1 & i <= 1){
-
-  }
-```
-
-### 5. Increase counter if the condition is true
-``` r
-    counter <- counter + 1
-```
-
-### 6. return a result <- counter / N
-``` r
-result = counter/Numbers 
-
-print(result*100)
+scala> mutmap += ("Miguel" -> 23)
+res1: mutmap.type = Map(Susana -> 27, Ana -> 23, Miguel -> 23, Luis -> 24, Jose -> 20)
 ```

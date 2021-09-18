@@ -1,32 +1,19 @@
 # Practice #01
 
-Test the Law Of Large Numbers for N random normally distributed numbers with mean = 0, stdev=1:
-
-Create an R script that will count how many of these numbers fall between -1 and 1 and divide by the total quantity of N
-
-You know that E(X) = 68.2%
-Check that Mean(Xn)->E(X) as you rerun your script while increasing N
-
-Hint:
-1. Initialize sample size
-2. Initialize counter
-3. loop for(i in rnorm(size))
-4. Check if the iterated variable falls
-5. Increase counter if the condition is true
-6. return a result <- counter / N
+Dado el pseudocódigo de la sucesión de Fibonacci en el enlace proporcionado, implementar con Scala el Algoritmo 1, Algoritmo 2, Algoritmo 3, Algoritmo 4, Algoritmo 5
 
 
-### 1. Initialize sample size
+### 1. Algoritmo 1
 ``` r
 Numbers = 1:30
 ```
 
-### 2. Initialize counter
+### 2. Algoritmo 2
 ``` r
 counter = 1
 ```
 
-### 3. loop for(i in rnorm(size))
+### 3. Algoritmo 3
 ``` r
 for(i in rnorm(Numbers))
   {
@@ -34,21 +21,15 @@ for(i in rnorm(Numbers))
   }
 ```
 
-### 4. Check if the iterated variable falls
+### 4. Algoritmo 4
 ``` r
   if(i >= -1 & i <= 1){
 
   }
 ```
 
-### 5. Increase counter if the condition is true
+### 5. Algoritmo 5
 ``` r
     counter <- counter + 1
 ```
 
-### 6. return a result <- counter / N
-``` r
-result = counter/Numbers 
-
-print(result*100)
-```
