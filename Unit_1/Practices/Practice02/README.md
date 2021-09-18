@@ -1,54 +1,61 @@
-# Practice #01
+# Practice #02
 
-Test the Law Of Large Numbers for N random normally distributed numbers with mean = 0, stdev=1:
-
-Create an R script that will count how many of these numbers fall between -1 and 1 and divide by the total quantity of N
-
-You know that E(X) = 68.2%
-Check that Mean(Xn)->E(X) as you rerun your script while increasing N
-
-Hint:
-1. Initialize sample size
-2. Initialize counter
-3. loop for(i in rnorm(size))
-4. Check if the iterated variable falls
-5. Increase counter if the condition is true
-6. return a result <- counter / N
+1. Develop a scala algorithm that calculates the radius of a circle
+2. Develop a scala algorithm that tells me if a number is prime
+3. Given the variable var bird = "tweet", use string interpolation to
+    print "I'm writing a tweet"
+4. Given the variable var message = "Hi Luke, I'm your father!" uses slice to extract the
+    sequence "Luke"
+5. What is the difference between value (val) and a variable (var) in scala?
+6. Given the tuple (2,4,5,1,2,3,3,1416,23) returns the number 3.1416
 
 
-### 1. Initialize sample size
+### 1. Develop a scala algorithm that calculates the radius of a circle
 ``` r
-Numbers = 1:30
+import scala.io.StdIn.readLine
+
+def radio(): Unit = {
+    println("Ingresa el diametro de un circulo: ")
+    var D = scala.io.StdIn.readInt()
+    var r = D/2
+    println("El radio del circulo es: " + r)
+}
+
+radio()
+
+scala> radio()
+Ingresa el diametro de un circulo: 
+El radio del circulo es: 5
 ```
 
-### 2. Initialize counter
+### 2. Develop a scala algorithm that tells me if a number is prime
 ``` r
-counter = 1
+def primo(): Unit = {
+    println("Ingresa un numero: ")
+    val n = scala.io.StdIn.readInt()
+    if(n%2==0){
+        println(s"$n es par")
+    } else {
+        println(s"$n es impar")
+    }
+}
+
+primo()
+
+scala> primo()
+Ingresa un numero: 
+11 es impar
 ```
 
-### 3. loop for(i in rnorm(size))
+### 3. Given the variable var bird = "tweet", use string interpolation to print "I'm writing a tweet"
 ``` r
-for(i in rnorm(Numbers))
-  {
-  print(i)
-  }
+var bird  = "tweet"
+val message = s"Estoy ecribiendo un $bird"
+
+scala> var bird  = "tweet"
+bird: String = tweet
+
+scala> val message = s"Estoy ecribiendo un $bird"
+message: String = Estoy ecribiendo un tweet
 ```
 
-### 4. Check if the iterated variable falls
-``` r
-  if(i >= -1 & i <= 1){
-
-  }
-```
-
-### 5. Increase counter if the condition is true
-``` r
-    counter <- counter + 1
-```
-
-### 6. return a result <- counter / N
-``` r
-result = counter/Numbers 
-
-print(result*100)
-```
