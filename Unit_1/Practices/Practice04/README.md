@@ -1,4 +1,4 @@
-# Practice #01
+# Practice #04
 
 Dado el pseudocódigo de la sucesión de Fibonacci en el enlace proporcionado, implementar con Scala el Algoritmo 1, Algoritmo 2, Algoritmo 3, Algoritmo 4, Algoritmo 5
 
