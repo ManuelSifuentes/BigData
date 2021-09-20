@@ -31,14 +31,14 @@ list = list :+ "pearl"
 
 ...
 
-scala> lista = lista :+ "blue"
-lista: List[String] = List(red, white, black, green, yellow, blue)
+scala> list = list :+ "blue"
+list: List[String] = List(red, white, black, green, yellow, blue)
 
-scala> lista = lista :+ "orange"
-lista: List[String] = List(red, white, black, green, yellow, blue, orange)
+scala> list = list :+ "orange"
+list: List[String] = List(red, white, black, green, yellow, blue, orange)
 
-scala> lista = lista :+ "pearl"
-lista: List[String] = List(red, white, black, green, yellow, blue, orange, pearl)
+scala> list = list :+ "pearl"
+list: List[String] = List(red, white, black, green, yellow, blue, orange, pearl)
 
 ```
 
