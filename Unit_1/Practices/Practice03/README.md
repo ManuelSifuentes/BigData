@@ -6,19 +6,70 @@
 4. Create an array of numbers in the range 1-1000 in steps of 5 by 5
 5. What are the unique elements of the list List (1,3,3,4,6,7,3,7) use conversion to sets
 6. Create a mutable map named names that contains the following
-     "José", 20, "Luis", 24, "Ana", 23, "Susana", "27"
+   "José", 20, "Luis", 24, "Ana", 23, "Susana", "27"
    6 a. Print all keys on the map
    6 b. Add the following value to the map ("Miguel", 23)
 
+### 1. Create a list called "list" with the elements "red", "white", "black"
+
+```r
+var list = List("red", "white", "black")
+
+scala> var list = List("red", "white", "black")
+list: List[String] = List(red, white, black)
+
+```
+
+### 2. Add 5 more items to "list" "green", "yellow", "blue", "orange", "pearl"
+
+```r
+list = list :+ "green"
+list = list :+ "yellow"
+list = list :+ "blue"
+list = list :+ "orange"
+list = list :+ "pearl"
+
+...
+
+scala> lista = lista :+ "blue"
+lista: List[String] = List(red, white, black, green, yellow, blue)
+
+scala> lista = lista :+ "orange"
+lista: List[String] = List(red, white, black, green, yellow, blue, orange)
+
+scala> lista = lista :+ "pearl"
+lista: List[String] = List(red, white, black, green, yellow, blue, orange, pearl)
+
+```
+
+### 3. Bring the items from "list" "green", "yellow", "blue"
+
+```r
+list(3)
+list(4)
+list(5)
+
+scala> list(3)
+res1: String = green
+
+scala> list(4)
+res1: String = yellow
+
+scala> list(5)
+res1: String = blue
+
+```
 
 ### 4. Create an array of numbers in the range 1-1000 in steps of 5 by 5
-``` r
+
+```r
 val arr = Array.range(0, 1001, 5)
 
 ```
 
 ### 5. What are the unique elements of the list List (1,3,3,4,6,7,3,7) use conversion to sets
-``` r
+
+```r
 val Lista = List(1,3,3,4,6,7,3,7)
 Lista.toSet
 
@@ -27,17 +78,21 @@ res1: scala.collection.immutable.Set[Int] = Set(1, 6, 7, 3, 4)
 ```
 
 ### 6. Create a mutable map named names that contains the following "José", 20, "Luis", 24, "Ana", 23, "Susana", "27"
-``` r
+
+```r
 val mutmap = collection.mutable.Map(( "Jose", 20), ("Luis", 24), ("Ana", 23), ("Susana", "27"))
 ```
+
 ### 6a. Print all keys on the map
-``` r
+
+```r
 scala> mutmap.keys
 res0: Iterable[String] = Set(Susana, Ana, Luis, Jose)
 ```
 
 ### 6b. Add the following value to the map ("Miguel", 23)
-``` r
+
+```r
 scala> mutmap += ("Miguel" -> 23)
 res1: mutmap.type = Map(Susana -> 27, Ana -> 23, Miguel -> 23, Luis -> 24, Jose -> 20)
 ```

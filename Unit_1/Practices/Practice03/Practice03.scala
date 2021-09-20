@@ -1,8 +1,20 @@
 //Practice 03
 
 //1. Create a list called "list" with the elements "red", "white", "black"
-//2. Add 5 more items to "list" "green", "yellow", "blue", "orange", "pearl"//
+var list = List("red", "white", "black")
+
+//2. Add 5 more items to "list" "green", "yellow", "blue", "orange", "pearl"
+list = list :+ "green"
+list = list :+ "yellow"
+list = list :+ "blue"
+list = list :+ "orange"
+list = list :+ "pearl"
+
 //3. Bring the items from "list" "green", "yellow", "blue"
+list(3)
+list(4)
+list(5)
+
 //4. Create an array of numbers in the range 1-1000 in steps of 5 by 5
 val arr = Array.range(0, 1001, 5)
 arr(999)
