@@ -5,13 +5,34 @@
 ### 1. Algorithm 1
 
 ```r
-Numbers = 1:30
+Algoritmo 1:
+def fib1(n: Int): Int = {
+    if(n < 2) return n else fib1(n-1) + fib1(n-2)
+}
+
+scala> fib1(15)
+res22: Int = 610
 ```
 
 ### 2. Algorithm 2
 
 ```r
-counter = 1
+import scala.math.sqrt
+import scala.math.pow
+
+def fib2(n: Int): Int = {
+    if(n < 2) {
+        return n 
+    }
+    else {
+        var p = ((1+sqrt(5))/2)
+        var j = ( (pow(p,n) - pow(1-p,n) ) / sqrt(5))
+        return (j).toInt
+    }
+}
+
+scala> fib2(15)
+res8: Int = 610
 ```
 
 ### 3. Algorithm 3
