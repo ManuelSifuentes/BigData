@@ -10,7 +10,7 @@
 > - [Practice #4](https://github.com/ManuelSifuentes/BigData/tree/Unit_2/Unit_2/Practices/Practice04)
 > - [Practice #5](https://github.com/ManuelSifuentes/BigData/tree/Unit_2/Unit_2/Practices/Practice05)
 > - [Practice #6](https://github.com/ManuelSifuentes/BigData/tree/Unit_2/Unit_2/Practices/Practice06)
-> - [Practice #6](https://github.com/ManuelSifuentes/BigData/tree/Unit_2/Unit_2/Practices/Practice07)
+> - [Practice #7](https://github.com/ManuelSifuentes/BigData/tree/Unit_2/Unit_2/Practices/Practice07)
 
 ### Researchs
 
