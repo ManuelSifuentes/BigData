@@ -1,89 +1,177 @@
 # Practice #02
 
-1. Develop a scala algorithm that calculates the radius of a circle
-2. Develop a scala algorithm that tells me if a number is prime
-3. Given the variable var bird = "tweet", use string interpolation to
-   print "I'm writing a tweet"
-4. Given the variable var message = "Hi Luke, I'm your father!" uses slice to extract the
-   sequence "Luke"
-5. What is the difference between value (val) and a variable (var) in scala?
-6. Given the tuple (2,4,5,1,2,3,3,1416,23) returns the number 3.1416
+LINEAR REGRESSION EXERCISE
 
-### 1. Develop a scala algorithm that calculates the radius of a circle
+Import linear regression
 
 ```r
-import scala.io.StdIn.readLine
+import org.apache.spark.ml.regression.LinearRegression
+```
 
-def radio(): Unit = {
-    println("Ingresa el diametro de un circulo: ")
-    var D = scala.io.StdIn.readInt()
-    var r = D/2
-    println("El radio del circulo es: " + r)
+Start a simple Spark session
+
+```r
+import org.apache.spark.sql.SparkSession
+var spark = SparkSession.builder().getOrCreate()
+```
+
+Use Spark for the Clean-Ecommerce csv file.
+
+```r
+val data = spark.read.option("header","true").option("inferSchema","true").format("csv").load("Clean-Ecommerce.csv")
+```
+
+Print the schema in the DataFrame and print a sample row from the DataFrame.
+
+```r
+data.printSchema()
+val colnames = data.columns
+val firstrow = data.head(1)(0)
+println("\n")
+println("Example Data Row")
+for(ind <- Range(1,colnames.length)){
+  println(colnames(ind))
+  println(firstrow(ind))
+  println("\n")
 }
-
-radio()
-
-scala> radio()
-Ingresa el diametro de un circulo:
-El radio del circulo es: 5
 ```
 
-### 2. Develop a scala algorithm that tells me if a number is prime
+Result:
 
 ```r
-def primo(): Unit = {
-    println("Ingresa un numero: ")
-    val n = scala.io.StdIn.readInt()
-    if(n%2==0){
-        println(s"$n es par")
-    } else {
-        println(s"$n es impar")
-    }
-}
+data: org.apache.spark.sql.DataFrame = [Email: string, Avatar: string ... 5 more fields]
+root
+ |-- Email: string (nullable = true)
+ |-- Avatar: string (nullable = true)
+ |-- Avg Session Length: double (nullable = true)
+ |-- Time on App: double (nullable = true)
+ |-- Time on Website: double (nullable = true)
+ |-- Length of Membership: double (nullable = true)
+ |-- Yearly Amount Spent: double (nullable = true)
 
-primo()
+colnames: Array[String] = Array(Email, Avatar, Avg Session Length, Time on App, Time on Website, Length of Membership, Yearly Amount Spent)
+firstrow: org.apache.spark.sql.Row = [mstephenson@fernandez.com,Violet,34.49726772511229,12.65565114916675,39.57766801952616,4.0826206329529615,587.9510539684005]
 
-scala> primo()
-Ingresa un numero:
-11 es impar
+Example Data Row
+Avatar
+Violet
+
+Avg Session Length
+34.49726772511229
+
+Time on App
+12.65565114916675
+
+Time on Website
+39.57766801952616
+
+Length of Membership
+4.0826206329529615
+
+Yearly Amount Spent
+587.9510539684005
 ```
 
-### 3. Given the variable var bird = "tweet", use string interpolation to print "I'm writing a tweet"
+### Configure the data frame for machine learning
+
+Transform the data frame to take the form of ("tag", "features")
+Import VectorAssembler and Vectors
 
 ```r
-var bird  = "tweet"
-val message = s"Estoy ecribiendo un $bird"
-
-scala> var bird  = "tweet"
-bird: String = tweet
-
-scala> val message = s"Estoy ecribiendo un $bird"
-message: String = Estoy ecribiendo un tweet
+import org.apache.spark.ml.feature.VectorAssembler
+import org.apache.spark.ml.linalg.Vectors
 ```
 
-### 4. Given the variable var message = "Hi Luke, I'm your father!" uses slice to extract the sequence "Luke"
+Rename the Annual Amount Spent column as "label", also from the data take only the numeric column and leave all of this as a new DataFrame called df
 
 ```r
-val mensaje = "Hola Luke yo soy tu padre!"
-mensaje.slice(5,9)
-
-scala> mensaje.slice(5,9)
-res1: String = Luke
-
+val df = data.select(data("Yearly Amount Spent").as("label"),
+$"Avg Session Length",$"Time on App",$"Time on Website",$"Length of Membership")
 ```
 
-### 5. What is the difference between value (val) and a variable (var) in scala?
+Let the assembler object convert the input values ​​to a vector
 
-- “val” creates an immutable variable, since its value cannot change once declared.
-- “var” creates a mutable variable, it is possible to modify its original value.
-
-### 6. Given the tuple (2,4,5,1,2,3,3,1416,23) returns the number 3.1416
+Use the VectorAssembler object to convert the input columns of the df
+to a single output column of an array named "features"
+Set the input columns from where we are supposed to read the values.
+Call this new raider.
 
 ```r
-val tupla = (2,4,5,1,2,3,3.1416,23)
-tupla._7
+val assembler = new VectorAssembler().setInputCols(Array("Avg Session Length","Time on App","Time on Website","Length of Membership")).setOutputCol("features")
+```
 
-scala> tupla._7
-res2: Double = 3.1416
+Use the assembler to transform our DataFrame into two columns: label and characteristics
 
+```r
+val output = assembler.transform(df).select($"label",$"features")
+```
+
+Create an object for a linear regression model.
+
+```r
+val lr = new LinearRegression()
+```
+
+Fit the model for the data and call this model lrModel
+
+```r
+val lrModel = lr.fit(output)
+```
+
+Print the coefficients and intercept for linear regression
+
+```r
+println(s"Coefficients: ${lrModel.coefficients} Intercept: ${lrModel.intercept}")
+```
+
+Summarize the model in the training set print the result of some metrics!
+Use the .summary method of our model to create an object, called trainingSummary
+
+```r
+val trainingSummary = lrModel.summary
+```
+
+Shows the values ​​of the residuals, the RMSE, the MSE and also the R ^ 2.
+
+```r
+trainingSummary.residuals.show()
+println(s"RMSE: ${trainingSummary.rootMeanSquaredError}")
+println(s"MSE: ${trainingSummary.meanSquaredError}")
+println(s"r2: ${trainingSummary.r2}")
+```
+
+Result:
+
+```r
+Coefficients: [25.734271084670716,38.709153810828816,0.43673883558514964,61.57732375487594] Intercept: -1051.5942552990748
+trainingSummary: org.apache.spark.ml.regression.LinearRegressionTrainingSummary = org.apache.spark.ml.regression.LinearRegressionTrainingSummary@39dc0a19
++-------------------+
+|          residuals|
++-------------------+
+| -6.788234090018818|
+| 11.841128565326073|
+| -17.65262700858966|
+| 11.454889631178617|
+| 7.7833824373080915|
+|-1.8347332184773677|
+|  4.620232401352382|
+| -8.526545950978175|
+| 11.012210896516763|
+|-13.828032682158891|
+| -16.04456458615175|
+|  8.786634365463442|
+| 10.425717191807507|
+| 12.161293785003522|
+|  9.989313714461446|
+| 10.626662732649379|
+|  20.15641408428496|
+|-3.7708446586326545|
+| -4.129505481591934|
+|  9.206694655890487|
++-------------------+
+only showing top 20 rows
+
+RMSE: 9.923256785022229
+MSE: 98.47102522148971
+r2: 0.9843155370226727
 ```
