@@ -6,12 +6,11 @@ import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorIndexer}
 
 // Load and parse the data file, converting it to a DataFrame.
-val data = spark.read.format("libsvm").load("sample_libsvm_data.txt")
+val data = spark.read.format("libsvm").load("../sample_libsvm_data.txt")
 
 // Index labels, adding metadata to the label column.
 // Fit on whole dataset to include all labels in index.
-val labelIndexer = new StringIndexer().setInputCol("label").setOutputCol("indexedLabel")
-.fit(data)
+val labelIndexer = new StringIndexer().setInputCol("label").setOutputCol("indexedLabel").fit(data)
 // Automatically identify categorical features, and index them.
 // Set maxCategories so features with > 4 distinct values are treated as continuous.
 val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("indexedFeatures").setMaxCategories(4).fit(data)

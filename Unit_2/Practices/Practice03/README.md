@@ -1,98 +1,204 @@
 # Practice #03
 
-1. Create a list called "list" with the elements "red", "white", "black"
-2. Add 5 more items to "list" "green", "yellow", "blue", "orange", "pearl"
-3. Bring the items from "list" "green", "yellow", "blue"
-4. Create an array of numbers in the range 1-1000 in steps of 5 by 5
-5. What are the unique elements of the list List (1,3,3,4,6,7,3,7) use conversion to sets
-6. Create a mutable map named names that contains the following
-   "José", 20, "Luis", 24, "Ana", 23, "Susana", "27"
-   6 a. Print all keys on the map
-   6 b. Add the following value to the map ("Miguel", 23)
-
-### 1. Create a list called "list" with the elements "red", "white", "black"
+Libraries:
 
 ```r
-var list = List("red", "white", "black")
-
-scala> var list = List("red", "white", "black")
-list: List[String] = List(red, white, black)
-
+import org.apache.spark.ml.Pipeline
+import org.apache.spark.ml.classification.{RandomForestClassificationModel, RandomForestClassifier}
+import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
+import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorIndexer}
 ```
 
-### 2. Add 5 more items to "list" "green", "yellow", "blue", "orange", "pearl"
+Load and parse the data file, converting it to a DataFrame.
 
 ```r
-list = list :+ "green"
-list = list :+ "yellow"
-list = list :+ "blue"
-list = list :+ "orange"
-list = list :+ "pearl"
-
-...
-
-scala> list = list :+ "blue"
-list: List[String] = List(red, white, black, green, yellow, blue)
-
-scala> list = list :+ "orange"
-list: List[String] = List(red, white, black, green, yellow, blue, orange)
-
-scala> list = list :+ "pearl"
-list: List[String] = List(red, white, black, green, yellow, blue, orange, pearl)
-
+val data = spark.read.format("libsvm").load("../sample_libsvm_data.txt")
 ```
 
-### 3. Bring the items from "list" "green", "yellow", "blue"
+Index labels, adding metadata to the label column.
+Fit on whole dataset to include all labels in index.
 
 ```r
-list(3)
-list(4)
-list(5)
-
-scala> list(3)
-res1: String = green
-
-scala> list(4)
-res1: String = yellow
-
-scala> list(5)
-res1: String = blue
-
+val labelIndexer = new StringIndexer().setInputCol("label").setOutputCol("indexedLabel").fit(data)
 ```
 
-### 4. Create an array of numbers in the range 1-1000 in steps of 5 by 5
+Automatically identify categorical features, and index them.
+Set maxCategories so features with > 4 distinct values are treated as continuous.
 
 ```r
-val arr = Array.range(0, 1001, 5)
-
+val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("indexedFeatures").setMaxCategories(4).fit(data)
 ```
 
-### 5. What are the unique elements of the list List (1,3,3,4,6,7,3,7) use conversion to sets
+Split the data into training and test sets (30% held out for testing).
 
 ```r
-val Lista = List(1,3,3,4,6,7,3,7)
-Lista.toSet
-
-scala> Lista.toSet
-res1: scala.collection.immutable.Set[Int] = Set(1, 6, 7, 3, 4)
+val Array(trainingData, testData) = data.randomSplit(Array(0.7, 0.3))
 ```
 
-### 6. Create a mutable map named names that contains the following "José", 20, "Luis", 24, "Ana", 23, "Susana", "27"
+Train a RandomForest model.
 
 ```r
-val mutmap = collection.mutable.Map(( "Jose", 20), ("Luis", 24), ("Ana", 23), ("Susana", "27"))
+val rf = new RandomForestClassifier().setLabelCol("indexedLabel").setFeaturesCol("indexedFeatures").setNumTrees(10)
 ```
 
-### 6a. Print all keys on the map
+Convert indexed labels back to original labels.
 
 ```r
-scala> mutmap.keys
-res0: Iterable[String] = Set(Susana, Ana, Luis, Jose)
+val labelConverter = new IndexToString().setInputCol("prediction").setOutputCol("predictedLabel").setLabels(labelIndexer.labels)
 ```
 
-### 6b. Add the following value to the map ("Miguel", 23)
+Chain indexers and forest in a Pipeline.
 
 ```r
-scala> mutmap += ("Miguel" -> 23)
-res1: mutmap.type = Map(Susana -> 27, Ana -> 23, Miguel -> 23, Luis -> 24, Jose -> 20)
+val pipeline = new Pipeline().setStages(Array(labelIndexer, featureIndexer, rf, labelConverter))
+```
+
+Train model. This also runs the indexers.
+
+```r
+val model = pipeline.fit(trainingData)
+```
+
+Make predictions.
+
+```r
+val predictions = model.transform(testData)
+```
+
+Select example rows to display.
+
+```r
+predictions.select("predictedLabel", "label", "features").show(5)
+```
+
+Result:
+
+```r
+predictions: org.apache.spark.sql.DataFrame = [label: double, features: vector ... 6 more fields]
++--------------+-----+--------------------+
+|predictedLabel|label|            features|
++--------------+-----+--------------------+
+|           0.0|  0.0|(692,[98,99,100,1...|
+|           1.0|  0.0|(692,[100,101,102...|
+|           0.0|  0.0|(692,[122,123,124...|
+|           0.0|  0.0|(692,[122,123,148...|
+|           0.0|  0.0|(692,[124,125,126...|
++--------------+-----+--------------------+
+only showing top 5 rows
+```
+
+Select (prediction, true label) and compute test error.
+
+```r
+val evaluator = new MulticlassClassificationEvaluator().setLabelCol("indexedLabel").setPredictionCol("prediction").setMetricName("accuracy")
+val accuracy = evaluator.evaluate(predictions)
+println(s"Test Error = ${(1.0 - accuracy)}")
+```
+
+Result:
+
+```r
+accuracy: Double = 0.875
+Test Error = 0.125
+```
+
+```r
+val rfModel = model.stages(2).asInstanceOf[RandomForestClassificationModel]
+println(s"Learned classification forest model:\n ${rfModel.toDebugString}")
+```
+
+Result:
+
+```r
+Learned classification forest model:
+ RandomForestClassificationModel (uid=rfc_d58c33307ff3) with 10 trees
+  Tree 0 (weight 1.0):
+    If (feature 552 <= 5.5)
+     If (feature 356 <= 19.0)
+      Predict: 0.0
+     Else (feature 356 > 19.0)
+      Predict: 1.0
+    Else (feature 552 > 5.5)
+     If (feature 323 <= 23.0)
+      Predict: 1.0
+     Else (feature 323 > 23.0)
+      Predict: 0.0
+  Tree 1 (weight 1.0):
+    If (feature 567 <= 8.0)
+     If (feature 456 <= 31.5)
+      Predict: 0.0
+     Else (feature 456 > 31.5)
+      Predict: 1.0
+    Else (feature 567 > 8.0)
+     If (feature 317 <= 8.0)
+      Predict: 0.0
+     Else (feature 317 > 8.0)
+      Predict: 1.0
+  Tree 2 (weight 1.0):
+    If (feature 385 <= 4.0)
+     If (feature 317 <= 158.0)
+      Predict: 0.0
+     Else (feature 317 > 158.0)
+      Predict: 1.0
+    Else (feature 385 > 4.0)
+     Predict: 1.0
+  Tree 3 (weight 1.0):
+    If (feature 328 <= 24.0)
+     If (feature 439 <= 28.0)
+      Predict: 0.0
+     Else (feature 439 > 28.0)
+      Predict: 1.0
+    Else (feature 328 > 24.0)
+     Predict: 1.0
+  Tree 4 (weight 1.0):
+    If (feature 429 <= 11.5)
+     If (feature 358 <= 17.5)
+      Predict: 0.0
+     Else (feature 358 > 17.5)
+      Predict: 1.0
+    Else (feature 429 > 11.5)
+     Predict: 1.0
+  Tree 5 (weight 1.0):
+    If (feature 462 <= 63.0)
+     If (feature 240 <= 253.5)
+      Predict: 1.0
+     Else (feature 240 > 253.5)
+      If (feature 600 <= 5.5)
+       Predict: 0.0
+      Else (feature 600 > 5.5)
+       Predict: 1.0
+    Else (feature 462 > 63.0)
+     Predict: 0.0
+  Tree 6 (weight 1.0):
+    If (feature 512 <= 8.0)
+     If (feature 289 <= 28.5)
+      Predict: 0.0
+     Else (feature 289 > 28.5)
+      Predict: 1.0
+    Else (feature 512 > 8.0)
+     Predict: 1.0
+  Tree 7 (weight 1.0):
+    If (feature 512 <= 8.0)
+     If (feature 510 <= 6.5)
+      Predict: 0.0
+     Else (feature 510 > 6.5)
+      Predict: 1.0
+    Else (feature 512 > 8.0)
+     Predict: 1.0
+  Tree 8 (weight 1.0):
+    If (feature 462 <= 63.0)
+     If (feature 324 <= 253.5)
+      Predict: 1.0
+     Else (feature 324 > 253.5)
+      Predict: 0.0
+    Else (feature 462 > 63.0)
+     Predict: 0.0
+  Tree 9 (weight 1.0):
+    If (feature 385 <= 4.0)
+     If (feature 298 <= 224.5)
+      Predict: 0.0
+     Else (feature 298 > 224.5)
+      Predict: 1.0
+    Else (feature 385 > 4.0)
+     Predict: 1.0
 ```
