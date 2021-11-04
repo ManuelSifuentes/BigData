@@ -2,6 +2,8 @@
 
 Libraries:
 
+Gradient-boosted tree maintains the same structure to perform this classification, only changing when the model is created. First you will find the import of all the libraries to use.
+
 ```r
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.classification.{GBTClassificationModel, GBTClassifier}
@@ -11,12 +13,16 @@ import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorIndexer}
 
 Load and parse the data file, converting it to a DataFrame.
 
+After importing the dataset, specifying the format to be used and the directory where the file is located.
+
 ```r
 val data = spark.read.format("libsvm").load("../sample_libsvm_data.txt")
 ```
 
 Index labels, adding metadata to the label column.
 Fit on whole dataset to include all labels in index.
+
+Once the data is in the data variable, the labelIndexer and VectorIndexer variables are declared, the first is for the data that is trying to get and the second for the characteristics that will be used to get said data, the columns are indexed so they are remap with a temporary name specified in the setOutputCol method
 
 ```r
 val labelIndexer = new StringIndexer().setInputCol("label").setOutputCol("indexedLabel").fit(data)
@@ -31,11 +37,15 @@ val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("i
 
 Split the data into training and test sets (30% held out for testing).
 
+To perform the classification, two data vectors are needed, one with which the training of the model will be done (trainingData) taking 70% of the data and another with which the predictions will be made and the effectiveness of the model will be verified (testData) with 30% of the remaining data.
+
 ```r
 val Array(trainingData, testData) = data.randomSplit(Array(0.7, 0.3))
 ```
 
 Train a GBT model.
+
+Then a GBTClassifier model must be created, specifying which will be the label column, the features column and the maximum number of iterations to perform.
 
 ```r
 val gbt = new GBTClassifier().setLabelCol("indexedLabel").setFeaturesCol("indexedFeatures").setMaxIter(10).setFeatureSubsetStrategy("auto")
@@ -43,11 +53,15 @@ val gbt = new GBTClassifier().setLabelCol("indexedLabel").setFeaturesCol("indexe
 
 Convert indexed labels back to original labels.
 
+Here the indexedLabel column is converted to how it was originally, label.
+
 ```r
 val labelConverter = new IndexToString().setInputCol("prediction").setOutputCol("predictedLabel").setLabels(labelIndexer.labels)
 ```
 
 Chain indexers and GBT in a Pipeline.
+
+The pipeline is created, which is responsible for creating the process through which the training and test data will pass. After the model is created, which is entered with the training data, this data goes through the pipeline and the result is stored in the model variable.
 
 ```r
 val pipeline = new Pipeline().setStages(Array(labelIndexer, featureIndexer, gbt, labelConverter))
@@ -60,12 +74,15 @@ val model = pipeline.fit(trainingData)
 ```
 
 Make predictions.
+Once the model has been trained, the predictions are made, they pass through the pipeline again and the results are stored in the predictions variable.
 
 ```r
 val predictions = model.transform(testData)
 ```
 
 Select example rows to display.
+
+The results of the predictions can be observed with the help of the select and show method, in the first the columns are specified and in the second the number of rows to be displayed.
 
 ```r
 predictions.select("predictedLabel", "label", "features").show(5)
@@ -88,6 +105,8 @@ only showing top 5 rows
 
 Select (prediction, true label) and compute test error.
 
+En el evaluador se almacena la precisión con la que se predijeron los datos.
+
 ```r
 val evaluator = new MulticlassClassificationEvaluator().setLabelCol("indexedLabel").setPredictionCol("prediction").setMetricName("accuracy")
 val accuracy = evaluator.evaluate(predictions)
@@ -101,7 +120,9 @@ accuracy: Double = 1.0
 Test Error = 0.0
 ```
 
-We finish by showing the conditional logic that represents the elements of the trees
+We finish by showing the conditional logic that represents the elements of the trees.
+
+At the end, all the procedures performed in Gradient-boosted tree are displayed to obtain the results seen previously.
 
 ```r
 val gbtModel = model.stages(2).asInstanceOf[GBTClassificationModel]
