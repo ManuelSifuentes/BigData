@@ -2,6 +2,8 @@
 
 Libraries:
 
+To be able to use the necessary methods to perform the Random Forest classification, it is first necessary to import all the libraries that are going to be needed.
+
 ```r
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.classification.{RandomForestClassificationModel, RandomForestClassifier}
@@ -11,12 +13,18 @@ import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorIndexer}
 
 Load and parse the data file, converting it to a DataFrame.
 
+Subsequently, the dataset with which the training and test for the prediction will be carried out must be loaded, so the format and path where the file to be used is specified.
+
 ```r
 val data = spark.read.format("libsvm").load("../sample_libsvm_data.txt")
 ```
 
 Index labels, adding metadata to the label column.
 Fit on whole dataset to include all labels in index.
+
+The steps to perform a classification by Random Forest is practically the same as the one used for Decision Tree, only the model to be used changes, which bears the name of the type of classification to be performed.
+
+In the labelIndexer variable are the data that is tried to get with the respective classification method, and featureIndexer are the characteristics that will be used to get the data, all this using StringIndexer and VectorIndexer, the first one serves to translate the label column to a new column called indexedLabel, and the second also takes the characteristics and creates a vector called indexedFeatures, the setMaxCategories method serves to establish a limit in which the data will be treated as categories.
 
 ```r
 val labelIndexer = new StringIndexer().setInputCol("label").setOutputCol("indexedLabel").fit(data)
@@ -31,11 +39,15 @@ val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("i
 
 Split the data into training and test sets (30% held out for testing).
 
+As in Decision Tree, the data is separated into 2 parts, the training part in which 70% of the data is assigned and the test part, with the remaining 30%.
+
 ```r
 val Array(trainingData, testData) = data.randomSplit(Array(0.7, 0.3))
 ```
 
 Train a RandomForest model.
+
+The difference between Decision Tree and Random Forest is found here, since RandomForestClassifier is used to generate the model, it is specified that the label column will be called indexedLabel and the features column will be called indexedFeatures and finally the number of trees to use is established, which will be 10.
 
 ```r
 val rf = new RandomForestClassifier().setLabelCol("indexedLabel").setFeaturesCol("indexedFeatures").setNumTrees(10)
@@ -43,11 +55,15 @@ val rf = new RandomForestClassifier().setLabelCol("indexedLabel").setFeaturesCol
 
 Convert indexed labels back to original labels.
 
+The labelConverter variable will store the values that once the whole process has been done, the indexedLabel is translated back to label.
+
 ```r
 val labelConverter = new IndexToString().setInputCol("prediction").setOutputCol("predictedLabel").setLabels(labelIndexer.labels)
 ```
 
 Chain indexers and forest in a Pipeline.
+
+The pipeline is used to carry out all the necessary processes for RandomForest, taking the variables created so far.
 
 ```r
 val pipeline = new Pipeline().setStages(Array(labelIndexer, featureIndexer, rf, labelConverter))
@@ -55,17 +71,23 @@ val pipeline = new Pipeline().setStages(Array(labelIndexer, featureIndexer, rf, 
 
 Train model. This also runs the indexers.
 
+Once the pipeline is created, the previously divided data for training is passed as a parameter. This is stored in the model variable, it already contains the 10 trees, and I just need to evaluate it.
+
 ```r
 val model = pipeline.fit(trainingData)
 ```
 
 Make predictions.
 
+To perform the evaluation, the transform method is used and the test data is passed to make the predictions, which will result in a dataset that will be stored in the predictions variable.
+
 ```r
 val predictions = model.transform(testData)
 ```
 
 Select example rows to display.
+
+In order to view the results, the columns are selected and the show method specifies that the first 5 results are displayed.
 
 ```r
 predictions.select("predictedLabel", "label", "features").show(5)
@@ -88,6 +110,8 @@ only showing top 5 rows
 ```
 
 Select (prediction, true label) and compute test error.
+
+The following lines of code, as in the decision tree, are to obtain the accuracy and error rates, as well as to display the Random Forest model.
 
 ```r
 val evaluator = new MulticlassClassificationEvaluator().setLabelCol("indexedLabel").setPredictionCol("prediction").setMetricName("accuracy")
