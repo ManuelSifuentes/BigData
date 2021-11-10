@@ -6,7 +6,7 @@ import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorIndexer,
 
 // Read the titanic dataset
 val spark = SparkSession.builder().getOrCreate()
-val titanic_df = spark.read.format("csv").option("inferSchema", "true").option("header", "true").load("test.csv")
+val titanic_df = spark.read.format("csv").option("inferSchema", "true").option("header", "true").load("Test.csv")
 titanic_df.show()
 
 // Delete unnecessary columns
@@ -14,7 +14,7 @@ val data = titanic_df.drop("PassengerId","Name","Ticket","Cabin","Embarked","Sex
 data.show()
 
 //We use VectorAssembler to merge the multi-column features into one vector column
-val feature = new VectorAssembler().setInputCols(Array("Survived","Pclass","Age","Fare","Sex_index")).setOutputCol("features")
+val feature = new VectorAssembler().setInputCols(Array("Pclass","Age","Fare","Sex_index")).setOutputCol("features")
 val feature_vector= feature.transform(data)
 feature_vector.select("Survived","Pclass","Age","Fare","Sex_index","features").show()
 
