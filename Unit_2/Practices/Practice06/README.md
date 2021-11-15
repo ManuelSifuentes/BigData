@@ -3,30 +3,35 @@
 ### Example from Spark 2.4.7 documentation
 
 Library:
+The LinearSVC library is imported, which is the one that will help us create the object that will help to classify the data, and that allows access to the methods contained in it.
 
 ```r
 import org.apache.spark.ml.classification.LinearSVC
 ```
 
-Load training data
+Load training data.
+The data that will be used to train the model is loaded, this is done by specifying the type of format in which the data comes, and then, through load, the directory where the data file is located is placed. This is going to be saved in the training variable, since SVM needs a set of data to be able to determine the separation hyperplane, and in this way determine if a future data is part of a certain class or another.
 
 ```r
 val training = spark.read.format("libsvm").load("../sample_libsvm_data.txt")
 ```
 
-setMaxIter: Set the maximum number of iterations and setRegParam: Set the regularization parameter
+setMaxIter: Set the maximum number of iterations and setRegParam: Set the regularization parameter.
+Here the LinearSVC object is created, which is where the classification will be performed, the setMaxIter method determines the maximum number of iterations to perform and setRegParam serves to establish a regulation in the entered data.
 
 ```r
 val lsvc = new LinearSVC().setMaxIter(10).setRegParam(0.1)
 ```
 
-Fit the model and fits a model to the input data
+Fit the model and fits a model to the input data.
+Once the model has been created, now the data saved in the training variable are passed, in which the model must be adjusted to the data, this so that they can be classified based on these and obtain the coefficients that will be shown in the next step.
 
 ```r
 val lsvcModel = lsvc.fit(training)
 ```
 
-Print the coefficients and intercept for linear svc
+Print the coefficients and intercept for linear svc.
+At the end, the coefficients that gave as results when going through the SVM model are shown, which is how they are classified in order to determine if it belongs to one or another class within SVM, as well as the intercept line that resulted when classifying the data.
 
 ```r
 println(s"Coefficients: ${lsvcModel.coefficients} Intercept: ${lsvcModel.intercept}")
