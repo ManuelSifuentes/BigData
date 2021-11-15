@@ -1,97 +1,62 @@
-# Practice #04
+# Practice #05
 
-## Given the pseudo-code of the Fibonacci sequence in the link provided, implement with Scala:
+Libraries:
 
-### 1. Algorithm 1
+In order to carry out this type of classification, the respective libraries for the creation of the object must be imported, so the MultilayerPerceptronClassifier and MulticlassClassificationEvaluator libraries are imported.
 
 ```r
-Algoritmo 1:
-def fib1(n: Int): Int = {
-    if(n < 2) return n else fib1(n-1) + fib1(n-2)
-}
-
-scala> fib1(15)
-res22: Int = 610
+import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
+import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 ```
 
-### 2. Algorithm 2
+Load the data stored in LIBSVM format as a DataFrame.
+The dataset must be loaded, and this is done with the read method, first specifying the format in which the data comes, and then, with the load method, the directory where the file is located is placed, the data is saved in the variable data.
 
 ```r
-import scala.math.sqrt
-import scala.math.pow
-
-def fib2(n: Int): Int = {
-    if(n < 2) {
-        return n 
-    }
-    else {
-        var p = ((1+sqrt(5))/2)
-        var j = ( (pow(p,n) - pow(1-p,n) ) / sqrt(5))
-        return (j).toInt
-    }
-}
-
-scala> fib2(15)
-res8: Int = 610
+val data = spark.read.format("libsvm").load("data/mllib/sample_multiclass_classification_data.txt")
 ```
 
-### 3. Algorithm 3
+Split the data into train and test.
+Having already loaded the data set in memory, they must be divided randomly to be able, first, to train the model, and later to do the tests to see what results it yields after having performed the classification procedures. The random split method is used, specifying that 60% will go to training and the rest to test. The seed parameter is used to indicate a pseudo-randomization pattern so that, each time the code is executed, different results are obtained.
 
 ```r
-    def fibo_3(n: Int): Int = {
-      var n1 = n - 1;
-      var a = 0;
-      var b = 1;
-      var c = 0;
-      for ( k <- 0 to n1)
-      {
-        c = b + a;
-        a = b;
-        b = c;
-      }
-      return a
-    }
-
-    scala> fibo_3(15)
-    res1: Int = 610
+val splits = data.randomSplit(Array(0.6, 0.4), seed = 1234L)
+val train = splits(0)
+val test = splits(1)
 ```
 
-### 4. Algorithm 4
+Specify layers for the neural network: input layer of size 4 (features), two intermediate of size 5 and 4 and output of size 3 (classes).
+Here the fields for the neural network are specified, which are the input, output and intermediate fields, so they are declared in this way, with the help of a vector.
 
 ```r
-    def fibo_4(n: Int): Int = {
-      var n1 = n -1;
-      var a = 0;
-      var b = 1;
-      for ( k <- 0 to n1)
-      {
-        b = b + a;
-        a = b - a;
-      }
-      return(a)
-    }
-
-    scala> fibo_4(15)
-    res2: Int = 610
+val layers = Array[Int](4, 5, 4, 3)
 ```
 
-### 5. Algorithm 5
+Create the trainer and set its parameters.
+Here you create the MultilayerPerceptronClassifier object, and with the help of different methods you specify the characteristics you want it to have. The layers declared in the previous step are passed as a parameter with the help of the setLayers method, with setBlockSize the number of bits to use is defined, setSeed to grant randomness and finally setMaxIter is found, which is the maximum number of iterations. To make.
 
 ```r
-    def fibo_5(n: Int): Int = {
-      if ( n < 2) return n
-      else {
-        var z = new Array[Int](n + 2);
-        z(0) = 0;
-        z(1) = 1;
-        for ( k <- 2 to (n + 1))
-          {
-            z(k) = z(k - 1) + z(k - 2);
-          }
-        return(z(n))
-      }
-    }
+val trainer = new MultilayerPerceptronClassifier().setLayers(layers).setBlockSize(128).setSeed(1234L).setMaxIter(100)
+```
 
-    scala> fibo_5(15)
-    res3: Int = 610
+Train the model.
+Here the model is adjusted to the data, it is trained to give better results for the subsequent prediction, what is saved in the trainer variable is what will be executed in the data set that is passed as a parameter, which results in the model of MultilayerPerceptronClassifier.
+
+```r
+val model = trainer.fit(train)
+```
+
+Compute accuracy on the test set.
+Being the final part of the process, the data set saved for the test is passed as a parameter in the transform method, these will be executed in the model and will return the result obtained after going through the MultilayerPerceptronClassifier process. Once the data has been saved in the result variable, it is accessed with the help of the select method, specifying the columns to be displayed. In the evaluator variable the percentage of precision that the classification method had will be saved.
+
+```r
+val result = model.transform(test)
+val predictionAndLabels = result.select("prediction", "label")
+val evaluator = new MulticlassClassificationEvaluator().setMetricName("accuracy")
+```
+
+At the end, the precision obtained by the MultilayerPerceptron classification process is displayed.
+
+```r
+println(s"Test set accuracy = ${evaluator.evaluate(predictionAndLabels)}")
 ```
