@@ -60,3 +60,9 @@ At the end, the precision obtained by the MultilayerPerceptron classification pr
 ```r
 println(s"Test set accuracy = ${evaluator.evaluate(predictionAndLabels)}")
 ```
+
+Result:
+
+```r
+Test set accuracy = 0.975
+```
