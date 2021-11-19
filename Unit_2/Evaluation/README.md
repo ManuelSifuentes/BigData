@@ -1,204 +1,200 @@
 # Evaluation #01
 
-## Answer the following questions with Spark DataFrames and Scala using the "CSV" Netflix_2011_2016.csv found in the spark-dataframes folder.
+In the evaluation of Big Data Unit 2, different actions and operations will be carried out with a provided Dataset. The Spark syntax will be used in order to achieve all the expected results.
 
-### 1. Start a simple Spark session.
-The SparkSession library is imported so that later you can use the methods to start a session in spark.
+1. Load into a dataframe Iris.csv
+
+The SparkSession library is imported so that later you can use the methods to start a session in Spark.
+
 ```r
-import org.apache.spark.sql.SparkSession
-val spark = SparkSession.builder().getOrCreate()
+val iris_df=spark.read.format("csv").option("header","true").load("iris.csv")
 ```
 
-### 2. Upload Netflix Stock CSV file, have Spark infer the data types.
-The CSV to be used is imported, specifying through the option function that header is true, this means that the first line is identified as the "title" of each column and it is saved in the constant df.
+- Libraries:
+
 ```r
-val df = spark.read.option("header", "true").option("inferSchema","true")csv("Netflix_2011_2016.csv") 
+import org.apache.spark.sql.types._
+import org.apache.spark.sql.functions._
 ```
 
-### 3. What are the names of the columns?
-Using the columns function, the name of the columns that the dataset contains can be displayed.
-```r
-df.columns
+Elaborate the necessary data cleaning to be processed by the algorithm.
 
-res0: Array[String] = Array(Date, Open, High, Low, Close, Volume, Adj Close)
+```r
+val data = iris_df.withColumn("sepal_length", $"sepal_length".cast(DoubleType)).withColumn("sepal_width", $"sepal_width".cast(DoubleType)).withColumn("petal_length", $"petal_length".cast(DoubleType)).withColumn("petal_width", $"petal_width".cast(DoubleType))
 ```
 
-### 4. What is the scheme like?
-The schema allows you to see the type of data that each column of the CSV has.
-```r
-df.printSchema()
+2. What are the names of the columns?
 
+The CSV to be used is imported, specifying through the option function that header is true, this means that the first line is identified as the "title" of each column and is saved in the constant df.
+
+```r
+data.columns
+```
+
+- Result:
+
+```r
+res0: Array[String] = Array(sepal_length, sepal_width, petal_length, petal_width, species)
+```
+
+3. What is the scheme like?
+
+Using the columns function, you can display the name of the columns that the dataset contains.
+
+```r
+data.printSchema()
+```
+
+- Result:
+
+```r
 root
- |-- Date: timestamp (nullable = true)
- |-- Open: double (nullable = true)
- |-- High: double (nullable = true)
- |-- Low: double (nullable = true)
- |-- Close: double (nullable = true)
- |-- Volume: integer (nullable = true)
- |-- Adj Close: double (nullable = true)
+ |-- sepal_length: double (nullable = true)
+ |-- sepal_width: double (nullable = true)
+ |-- petal_length: double (nullable = true)
+ |-- petal_width: double (nullable = true)
+ |-- species: string (nullable = true)
 ```
 
-### 5. Print the first 5 columns.
-Using the for loop to go through and print the first 5 lines of the dataset allow your display to be cleaner.
-```r
-for(row <- df.head(5)){
-    println(row)
-}
+4. Print the first 5 columns.
 
-[2011-10-24 00:00:00.0,119.100002,120.28000300000001,115.100004,118.839996,120460200,16.977142]
-[2011-10-25 00:00:00.0,74.899999,79.390001,74.249997,77.370002,315541800,11.052857000000001]
-[2011-10-26 00:00:00.0,78.73,81.420001,75.399997,79.400002,148733900,11.342857]
-[2011-10-27 00:00:00.0,82.179998,82.71999699999999,79.249998,80.86000200000001,71190000,11.551428999999999]
-[2011-10-28 00:00:00.0,80.280002,84.660002,79.599999,84.14000300000001,57769600,12.02]
+```r
+data.show(5)
 ```
 
-### 6. Use describe () to learn about the DataFrame.
-Discribe allows you to see different statistical results that can be useful to us, such as the number of data, the maximum or minimum, among others.
+- Result:
+
+The schema allows you to see the type of data that each column of the CSV has.
+
 ```r
-df.describe().show()
-
-+-------+------------------+------------------+------------------+------------------+--------------------+------------------+
-|summary|              Open|              High|               Low|             Close|              Volume|         Adj Close|
-+-------+------------------+------------------+------------------+------------------+--------------------+------------------+
-|  count|              1259|              1259|              1259|              1259|                1259|              1259|
-|   mean|230.39351086656092|233.97320872915006|226.80127876251044|  230.522453845909|2.5634836060365368E7|55.610540036536875|
-| stddev|164.37456353264244| 165.9705082667129| 162.6506358235739|164.40918905512854| 2.306312683388607E7|35.186669331525486|
-|    min|         53.990001|         55.480001|             52.81|              53.8|             3531300|          7.685714|
-|    max|        708.900017|        716.159996|        697.569984|        707.610001|           315541800|        130.929993|
-+-------+------------------+------------------+------------------+------------------+--------------------+------------------+
-
++------------+-----------+------------+-----------+-------+
+|sepal_length|sepal_width|petal_length|petal_width|species|
++------------+-----------+------------+-----------+-------+
+|         5.1|        3.5|         1.4|        0.2| setosa|
+|         4.9|        3.0|         1.4|        0.2| setosa|
+|         4.7|        3.2|         1.3|        0.2| setosa|
+|         4.6|        3.1|         1.5|        0.2| setosa|
+|         5.0|        3.6|         1.4|        0.2| setosa|
++------------+-----------+------------+-----------+-------+
+only showing top 5 rows
 ```
 
-### 7. Create a new dataframe with a new column called “HV Ratio” which is the relationship between the price in the “High” column versus the “Volume” column of shares traded for a day.
-Dividing the High column by Volume allows you to find the relationship between these two columns.
-```r
-val df2 = df.withColumn("HV Ratio",df("High")/df("Volume"))
+5. Use the describe () method to learn more about the data in the DataFrame.
 
-+-------------------+-----------------+------------------+----------+-----------------+---------+------------------+--------------------+
-|               Date|             Open|              High|       Low|            Close|   Volume|         Adj Close|            HV Ratio|
-+-------------------+-----------------+------------------+----------+-----------------+---------+------------------+--------------------+
-|2011-10-24 00:00:00|       119.100002|120.28000300000001|115.100004|       118.839996|120460200|         16.977142|9.985040951285156E-7
-+-------------------+-----------------+------------------+----------+-----------------+---------+------------------+--------------------+
+```r
+data.describe().show()
 ```
 
-### 8. What day had the highest peak in the “Open” column?
-To easily get the day with the highest selling price, just sort the dataset in descending order and take the first value.
-```r
-df.orderBy($"Open".desc).show(1)
+- Result:
 
-+-------------------+----------+----------+----------+----------+--------+----------+
-|               Date|      Open|      High|       Low|     Close|  Volume| Adj Close|
-+-------------------+----------+----------+----------+----------+--------+----------+
-|2015-07-14 00:00:00|708.900017|711.449982|697.569984|702.600006|19736500|100.371429|
-+-------------------+----------+----------+----------+----------+--------+----------+
+The schema allows you to see the type of data that each column of the CSV has.
+
+```r
++-------+------------------+-------------------+------------------+------------------+---------+
+|summary|      sepal_length|        sepal_width|      petal_length|       petal_width|  species|
++-------+------------------+-------------------+------------------+------------------+---------+
+|  count|               150|                150|               150|               150|      150|
+|   mean| 5.843333333333335| 3.0540000000000007|3.7586666666666693|1.1986666666666672|     null|
+| stddev|0.8280661279778637|0.43359431136217375| 1.764420419952262|0.7631607417008414|     null|
+|    min|               4.3|                2.0|               1.0|               0.1|   setosa|
+|    max|               7.9|                4.4|               6.9|               2.5|virginica|
++-------+------------------+-------------------+------------------+------------------+---------+
 ```
 
-### 9. What is the meaning of the Close column “Close” in the context of financial information, explain it, there is nothing to code?
-It is the price at which the stock sales ended on the respective day.
+6. Make the pertinent transformation for the categorical data which will be our labels to be classified.
 
-### 10. What is the maximum and minimum in the “Volume” column?
-Using the Max and Min function we can quickly find the maximum and minimum values ​​of the Volume column.
+The schema allows you to see the type of data that each column of the CSV has.
+
 ```r
-df.select(max("Volume")).show()
+import org.apache.spark.ml.feature.VectorAssembler
+val assembler = new VectorAssembler().setInputCols(Array("sepal_length", "sepal_width", "petal_length", "petal_width")).setOutputCol("features")
+val features = assembler.transform(data)
+features.show(5)
 
-+-----------+
-|max(Volume)|
-+-----------+
-|  315541800|
-+-----------+
+import org.apache.spark.ml.feature.StringIndexer
+val labelIndexer = new StringIndexer().setInputCol("species").setOutputCol("indexedLabel").fit(features)
+println(s"Found labels: ${labelIndexer.labels.mkString("[", ", ", "]")}")
 
-df.select(min("Volume")).show()
-+-----------+
-|min(Volume)|
-+-----------+
-|    3531300|
-+-----------+
+import org.apache.spark.ml.feature.VectorIndexer
+val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("indexedFeatures").setMaxCategories(4).fit(features)
 
+val splits = features.randomSplit(Array(0.6, 0.4))
+val trainingData = splits(0)
+val testData = splits(1)
+
+val layers = Array[Int](4, 5, 5, 3)
 ```
 
-
-### 11. With Scala/Spark $ Syntax answer the following:
-#### a. How many days was the “Close” column less than $ 600?
-
-The spark method is used, which allows filtering data from a column with a specific condition to see those less than 600.
+- Result:
 
 ```r
-df.filter($"Close"<600).count()
+features: org.apache.spark.sql.DataFrame = [sepal_length: double, sepal_width: double ... 4 more fields]
++------------+-----------+------------+-----------+-------+-----------------+
+|sepal_length|sepal_width|petal_length|petal_width|species|         features|
++------------+-----------+------------+-----------+-------+-----------------+
+|         5.1|        3.5|         1.4|        0.2| setosa|[5.1,3.5,1.4,0.2]|
+|         4.9|        3.0|         1.4|        0.2| setosa|[4.9,3.0,1.4,0.2]|
+|         4.7|        3.2|         1.3|        0.2| setosa|[4.7,3.2,1.3,0.2]|
+|         4.6|        3.1|         1.5|        0.2| setosa|[4.6,3.1,1.5,0.2]|
+|         5.0|        3.6|         1.4|        0.2| setosa|[5.0,3.6,1.4,0.2]|
++------------+-----------+------------+-----------+-------+-----------------+
+only showing top 5 rows
 
-res1: Long = 1218
-
+import org.apache.spark.ml.feature.StringIndexer
+labelIndexer: org.apache.spark.ml.feature.StringIndexerModel = strIdx_c48c889842df
+Found labels: [versicolor, virginica, setosa]
 ```
 
-#### b. What percentage of the time was the “High” column greater than $ 500?
-
-The same as the previous one, but now first the ones greater than 500 are searched, and from this it is multiplied by 1 and divided by the total of records in data frame and multiplied by 100, to obtain the required percentage.
+7. Build the classification model and explain its architecture.
 
 ```r
-(df.filter($"High">500).count()*1.0/df.count())*100
+import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
+val trainer = new MultilayerPerceptronClassifier().setLayers(layers).setLabelCol("indexedLabel").setFeaturesCol("indexedFeatures").setBlockSize(128).setSeed(System.currentTimeMillis).setMaxIter(200)
 
-res2: Double = 4.924543288324067
+import org.apache.spark.ml.feature.IndexToString
+val labelConverter = new IndexToString().setInputCol("prediction").setOutputCol("predictedLabel").setLabels(labelIndexer.labels)
+
+import org.apache.spark.ml.Pipeline
+val pipeline = new Pipeline().setStages(Array(labelIndexer, featureIndexer, trainer, labelConverter))
+
+val model = pipeline.fit(trainingData)
 ```
 
-#### c. What is the Pearson correlation between column "High" and column "Volume"?
+8. Print the model results
 
-We use the spark method of corr to obtain the Pearson correlation.
+The schema allows you to see the type of data that each column of the CSV has.
 
 ```r
-df.select(corr("High","Volume")).show()
+val predictions = model.transform(testData)
 
-+--------------------+
-|  corr(High, Volume)|
-+--------------------+
-|-0.20960233287942157|
-+--------------------+
+predictions.show(5)
 
+import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
+
+val evaluator = new MulticlassClassificationEvaluator().setLabelCol("indexedLabel").setPredictionCol("prediction").setMetricName("accuracy")
+val accuracy = evaluator.evaluate(predictions)
+println("Test Error = " + (1.0 - accuracy))
 ```
 
-#### d. What is the maximum in the “High” column per year?
+- Result:
 
-A new dataframe is obtained from the date column and then the required year is obtained. Once again another dataframe is created that has the highest values of each year, ending with showing the maximum value of each year.
-
-```r
-val df_year = df.withColumn("Year",year(df("Date")))
-val df_max = df_year.select($"Year",$"High").groupBy("Year").max()
-df_max.select($"Year",$"max(High)").show()
-
-+----+------------------+
-|Year|         max(High)|
-+----+------------------+
-|2015|        716.159996|
-|2013|        389.159988|
-|2014|        489.290024|
-|2012|        133.429996|
-|2016|129.28999299999998|
-
-```
-
-#### e. What is the “Close” column average for each calendar month?
-
-A new dataframe is obtained from the date column and then the required month is obtained. Once again another dataframe is created that has the values with which I close each month, ending with showing the average value of each month.
+As can be seen, the prediction shows a certainty of 0.9696, showing its efficiency when predicting the categorical of the irises when there are random or unknown samples of its category.
 
 ```r
-val df_month = df.withColumn("Month",month(df("Date")))
-val month_avgs = df_month.select($"Month",$"Close").groupBy("Month").mean()
-month_avgs.select($"Month",$"avg(Close)").show()
- 
-+-----+------------------+
-|Month|        avg(Close)|
-+-----+------------------+
-|   12| 199.3700942358491|
-|    1|212.22613874257422|
-|    6| 295.1597153490566|
-|    3| 249.5825228971963|
-|    5|264.37037614150944|
-|    9|206.09598121568627|
-|    4|246.97514271428562|
-|    8|195.25599892727263|
-|    7|243.64747528037387|
-|   10|205.93297300900903|
-|   11| 194.3172275445545|
-|    2| 254.1954634020619|
-+-----+------------------+
+predictions: org.apache.spark.sql.DataFrame = [sepal_length: double, sepal_width: double ... 10 more fields]
++------------+-----------+------------+-----------+-------+-----------------+------------+-----------------+--------------------+--------------------+----------+--------------+
+|sepal_length|sepal_width|petal_length|petal_width|species|         features|indexedLabel|  indexedFeatures|       rawPrediction|         probability|prediction|predictedLabel|
++------------+-----------+------------+-----------+-------+-----------------+------------+-----------------+--------------------+--------------------+----------+--------------+
+|         4.3|        3.0|         1.1|        0.1| setosa|[4.3,3.0,1.1,0.1]|         2.0|[4.3,3.0,1.1,0.1]|[6.20977900230933...|[2.27331552505356...|       2.0|        setosa|
+|         4.4|        2.9|         1.4|        0.2| setosa|[4.4,2.9,1.4,0.2]|         2.0|[4.4,2.9,1.4,0.2]|[6.08106085219172...|[1.49549216984019...|       2.0|        setosa|
+|         4.4|        3.2|         1.3|        0.2| setosa|[4.4,3.2,1.3,0.2]|         2.0|[4.4,3.2,1.3,0.2]|[6.86084770281904...|[1.89616850698231...|       2.0|        setosa|
+|         4.6|        3.2|         1.4|        0.2| setosa|[4.6,3.2,1.4,0.2]|         2.0|[4.6,3.2,1.4,0.2]|[6.83415294074120...|[1.73795463395268...|       2.0|        setosa|
+|         4.6|        3.4|         1.4|        0.3| setosa|[4.6,3.4,1.4,0.3]|         2.0|[4.6,3.4,1.4,0.3]|[7.24100106273056...|[6.60366530948576...|       2.0|        setosa|
++------------+-----------+------------+-----------+-------+-----------------+------------+-----------------+--------------------+--------------------+----------+--------------+
+only showing top 5 rows
 
-
+import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
+evaluator: org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator = mcEval_98213606e44a
+accuracy: Double = 0.9016393442622951
+Test Error = 0.09836065573770492
 ```
