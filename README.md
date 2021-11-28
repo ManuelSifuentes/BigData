@@ -4,7 +4,7 @@
 
 ### Practices
 
-> - [Practice #1](https://github.com/ManuelSifuentes/BigData/tree/Unit_2/Unit_3/Practices/Practice01)
+> - [Practice #1](https://github.com/ManuelSifuentes/BigData/tree/Unit_3/Unit_3/Practices/Practice01)
 
 ### Researchs
 
