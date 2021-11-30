@@ -1,128 +1,216 @@
-# Practice #01
+# Practice 01: Logistic Regression Project
 
-First, the libraries to be used must be imported, they contain the methods that will later allow to carry out all the procedures and actions to be able to perform the classification by the Decision tree method.
+In this project we will be working with a fake advertising data set, indicating whether or not a particular internet user clicked on an Advertisement. We will try to create a model that will predict whether or not they will click on an ad based off the features of that user.
+This data set contains the following features:
+
+- 'Daily Time Spent on Site': consumer time on site in minutes
+- 'Age': cutomer age in years
+- 'Area Income': Avg. Income of geographical area of ​​consumer
+- 'Daily Internet Usage': Avg. Minutes a day consumer is on the internet
+- 'Ad Topic Line': Headline of the advertisement
+- 'City': City of consumer
+- 'Male': Whether or not consumer was male
+- 'Country': Country of consumer
+- 'Timestamp': Time at which consumer clicked on Ad or closed window
+- 'Clicked on Ad': 0 or 1 indicated clicking on Ad
+
+### Take the data
+
+Import a SparkSession with the Logistic Regression library:
+
+```r
+import org.apache.spark.ml.classification.LogisticRegression
+import org.apache.spark.sql.SparkSession
+```
+
+Optional: USe the Error reporting code
+
+```r
+import org.apache.log4j._
+Logger.getLogger("org").setLevel(Level.ERROR)
+```
+
+Create a Spark Session
+
+```r
+val spark = SparkSession.builder().getOrCreate()
+```
+
+Use Spark to read the csv file Advertising
+
+```r
+val data  = spark.read.option("header","true").option("inferSchema", "true").format("csv").load("advertising.csv")
+```
+
+Print the Schema of the DataFrame:
+
+```r
+data.printSchema()
+```
+
+Result:
+
+```r
+root
+ |-- Daily Time Spent on Site: double (nullable = true)
+ |-- Age: integer (nullable = true)
+ |-- Area Income: double (nullable = true)
+ |-- Daily Internet Usage: double (nullable = true)
+ |-- Ad Topic Line: string (nullable = true)
+ |-- City: string (nullable = true)
+ |-- Male: integer (nullable = true)
+ |-- Country: string (nullable = true)
+ |-- Timestamp: timestamp (nullable = true)
+ |-- Clicked on Ad: integer (nullable = true)
+```
+
+#### Display the data
+
+Print an example row:
+
+```r
+data.head(1)
+
+val colnames = data.columns
+val firstrow = data.head(1)(0)
+println("\n")
+println("Example data row")
+for(ind <- Range(1, colnames.length)){
+    println(colnames(ind))
+    println(firstrow(ind))
+    println("\n")
+}
+```
+
+Result:
+
+```r
+res2: Array[org.apache.spark.sql.Row] = Array([68.95,35,61833.9,256.09,Cloned 5thgeneration orchestration,Wrightburgh,0,Tunisia,2016-03-27 00:53:11.0,0])
+colnames: Array[String] = Array(Daily Time Spent on Site, Age, Area Income, Daily Internet Usage, Ad Topic Line, City, Male, Country, Timestamp, Clicked on Ad)
+firstrow: org.apache.spark.sql.Row = [68.95,35,61833.9,256.09,Cloned 5thgeneration orchestration,Wrightburgh,0,Tunisia,2016-03-27 00:53:11.0,0]
+
+Example data row
+Age
+35
+
+Area Income
+61833.9
+
+Daily Internet Usage
+256.09
+
+Ad Topic Line
+Cloned 5thgeneration orchestration
+
+City
+Wrightburgh
+
+Male
+0
+
+Country
+Tunisia
+
+Timestamp
+2016-03-27 00:53:11.0
+
+Clicked on Ad
+0
+```
+
+Prepare the DataFrame for Machine Learning
+
+Do the next:
+
+1. Rename the column "Clicked on "Ad" to "label"
+2. Take the following columns as features "Daily Time Spent on Site", "Age", "Area Income", "Daily Internet Usage", "Timestamp", "Male"
+3. Create a new column called "Hour" from the Timestamp containing the "Hour of the click"
+
+```r
+val timedata = data.withColumn("Hour",hour(data("Timestamp")))
+val logregdata = timedata.select(data("Clicked on Ad").as("label"), $"Daily Time Spent on Site", $"Age", $"Area Income", $"Daily Internet Usage", $"Hour", $"Male")
+```
+
+Import VectorAssembler and Vectors
+
+```r
+import org.apache.spark.ml.feature.VectorAssembler
+import org.apache.spark.ml.linalg.Vectors
+```
+
+Create a new VectorAssembler object called assembler for the features
+
+```r
+val assembler = (new VectorAssembler().setInputCols(Array("Daily Time Spent on Site", "Age","Area Income","Daily Internet Usage","Hour","Male")).setOutputCol("features"))
+```
+
+Use randomSplit to create 70/30 split test and train data
+
+```r
+val Array(training, test) = logregdata.randomSplit(Array(0.7, 0.3), seed = 12345)
+```
+
+#### Configure a Pipeline
+
+Pipeline amount
 
 ```r
 import org.apache.spark.ml.Pipeline
-import org.apache.spark.ml.classification.DecisionTreeClassificationModel
-import org.apache.spark.ml.classification.DecisionTreeClassifier
-import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
-import org.apache.spark.ml.feature.{IndexToString, StringIndexer, VectorIndexer}
 ```
 
-Afterwards, the data set to be analyzed must be loaded, so the format is specified, in this case "libsvm" and the load method specifies the path where the file is hosted, since it is in the same directory , only the name sample_libsvm_data.txt is specified.
+Create a new LogisticRegression object called lr
 
 ```r
-val data = spark.read.format("libsvm").load("../sample_libsvm_data.txt")
+val lr = new LogisticRegression()
+val pipeline = new Pipeline().setStages(Array(assembler, lr))
 ```
 
-Once the data is loaded, the next step is to declare the following indexing vectors, which do not modify the current data, they are only indexed, this allows optimizing the procedures to be carried out.
-
-In the setInputCol method the name of the data column is specified, and in setOutputCol how the indexed column will be temporarily called.
-
-Index labels, adding metadata to the label column.
-Fit on whole dataset to include all labels in index.
+Fit (fit) the pipeline for the training set
 
 ```r
-val labelIndexer = new StringIndexer().setInputCol("label").setOutputCol("indexedLabel").fit(data)
+val model = pipeline.fit(training)
 ```
 
-Automatically identify categorical features, and index them.
+Take the Result in the Test set with transform
 
 ```r
-val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("indexedFeatures").setMaxCategories(4).fit(data) // features with > 4 distinct values are treated as continuous..fit(data)
+val results = model.transform(test)
 ```
 
-Already having the two vectors, now the data must be separated between the test and training data (test and training), for this another arrangement is declared and with the help of the randomSplit method, the data is separated, specifying that 70% of the data will go for training, and the rest for testing.
+#### Model Evaluation
+
+For Metrics and Evaluation import MulticlassMetrics
 
 ```r
-val Array(trainingData, testData) = data.randomSplit(Array(0.7, 0.3))
+import org.apache.spark.mllib.evaluation.MulticlassMetrics
 ```
 
-In this step, the model object is generated, specifying how the column that will carry the label that will be used for the predictions will be called, and then the characteristics that will be used to predict.
+Convert test results to RDD using .as and .rdd
 
 ```r
-val dt = new DecisionTreeClassifier().setLabelCol("indexedLabel").setFeaturesCol("indexedFeatures")
+val predictionAndLabels = results.select($"prediction",$"label").as[(Double, Double)].rdd
 ```
 
-The new IndexToString object will take care of converting existing columns to indices, all storing in the labelConverter variable.
+Initialize a MulticlassMetrics object
 
 ```r
-val labelConverter = new IndexToString().setInputCol("prediction").setOutputCol("predictedLabel").setLabels(labelIndexer.labels)
+val metrics = new MulticlassMetrics(predictionAndLabels)
 ```
 
-Inside the Pipeline is where everything created so far is related, it is specified that the label indexer (labelIndexer), characteristics (featureIndexer), the model (dt) and finally the converter (labelConverter) will be used, which is the one that removes the indexes that were previously created.
+Print the Confussion Matrix
 
 ```r
-val pipeline = new Pipeline().setStages(Array(labelIndexer, featureIndexer, dt, labelConverter))
-```
+println("Confusion matrix:")
+println(metrics.confusionMatrix)
 
-The training stage follows, here the created pipeline is used, and with the help of the fit method, the data source to be used is specified. This data will go through the pipeline stages, which were declared in the previous step.
-
-```r
-val model = pipeline.fit(trainingData)
-```
-
-Once the training is done, you already have data to be able to make predictions, so the declared variable is specified to store the training data, and with the transform method, the previously separated data is passed as a parameter to make the predictions. These will go through the same steps as the previous ones and in the end the predictions will return.
-
-```r
-val predictions = model.transform(testData)
-```
-
-Here the predictions data is selected, and the parameters are the name of the columns contained in the predictions variable, which are the label that was predicted, the real label and the characteristics and at the end, with the show method it is specified that only the first 5 rows are taken.
-
-```r
-predictions.select("predictedLabel", "label", "features").show(5)
+metrics.accuracy
 ```
 
 Result:
 
 ```r
-predictions: org.apache.spark.sql.DataFrame = [label: double, features: vector ... 6 more fields]
-+--------------+-----+--------------------+
-|predictedLabel|label|            features|
-+--------------+-----+--------------------+
-|           0.0|  0.0|(692,[98,99,100,1...|
-|           0.0|  0.0|(692,[122,123,124...|
-|           0.0|  0.0|(692,[123,124,125...|
-|           0.0|  0.0|(692,[123,124,125...|
-|           0.0|  0.0|(692,[124,125,126...|
-+--------------+-----+--------------------+
-only showing top 5 rows
-```
-
-The evaluator, which is what is declared in the following code, provides the declared metrics, which is through the setMetricName method, specifying that the accuracy is wanted, then the error obtained by the model is printed, subtracting completely (1) , the percentage of accuracy.
-
-```r
-val evaluator = new MulticlassClassificationEvaluator().setLabelCol("indexedLabel").setPredictionCol("prediction").setMetricName("accuracy")
-val accuracy = evaluator.evaluate(predictions)
-println(s"Test Error = ${(1.0 - accuracy)}")
-```
-
-Result:
-
-```r
-accuracy: Double = 0.9722222222222222
-Test Error = 0.02777777777777779
-```
-
-Finally, the visualization of the decision tree model is explicitly shown, specifying that only 2 stages are carried out and also with the help of the asInstanceOf method, passing as a parameter the type of model to be carried out, in this case DecisionTreeClassificationModel.
-
-```r
-val treeModel = model.stages(2).asInstanceOf[DecisionTreeClassificationModel]
-println(s"Learned classification tree model:\n ${treeModel.toDebugString}")
-```
-
-Result:
-
-```r
-Learned classification tree model:
- DecisionTreeClassificationModel (uid=dtc_a688c0785eea) of depth 2 with 5 nodes
-  If (feature 406 <= 22.0)
-   If (feature 99 in {2.0})
-    Predict: 0.0
-   Else (feature 99 not in {2.0})
-    Predict: 1.0
-  Else (feature 406 > 22.0)
-   Predict: 0.0
+Confusion matrix:
+146.0  7.0
+1.0    161.0
+res8: Double = 0.9746031746031746
 ```
