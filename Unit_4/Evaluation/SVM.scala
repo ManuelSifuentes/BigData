@@ -16,7 +16,7 @@ val df = spark.read.option("header","true").option("inferSchema","true").option(
 
 /*Desblegamos los tipos de datos.*/
 df.printSchema()
-df.show(1)
+df.show(5)
 
 /*Cambiamos la columna y por una con datos binarios.*/
 val change1 = df.withColumn("y",when(col("y").equalTo("yes"),1).otherwise(col("y")))
@@ -24,7 +24,7 @@ val change2 = change1.withColumn("y",when(col("y").equalTo("no"),2).otherwise(co
 val newcolumn = change2.withColumn("y",'y.cast("Int"))
 
 /*Desplegamos la nueva columna*/
-newcolumn.show(1)
+newcolumn.show(5)
 
 /*Generamos la tabla features*/
 val assembler = new VectorAssembler().setInputCols(Array("balance","day","duration","pdays","previous")).setOutputCol("features")
@@ -36,23 +36,36 @@ fea.show(1)
 /*Cambiamos la columna y a la columna label*/
 val cambio = fea.withColumnRenamed("y", "label")
 val feat = cambio.select("label","features")
-feat.show(1)
+feat.show(5)
 
-/*SVM*/
+/*SVM: Se requiere cambiar los valores categoricos numericos a 0 y 1 respectivamente*/
 val c1 = feat.withColumn("label",when(col("label").equalTo("1"),0).otherwise(col("label")))
 val c2 = c1.withColumn("label",when(col("label").equalTo("2"),1).otherwise(col("label")))
 val c3 = c2.withColumn("label",'label.cast("Int"))
+
+c3.show(5)
+
+//The data is prepared for training and the test
+val Array(trainingData, testData) = c3.randomSplit(Array(0.7, 0.3))
+
+//Instancia del modelo
 val linsvc = new LinearSVC().setMaxIter(10).setRegParam(0.1)
 
+// //Usando como valores predominantes el label y features
+// val linsvc = new LinearSVC().setLabelCol("label").setFeaturesCol("features")
+
 /* Fit del modelo*/
-val linsvcModel = linsvc.fit(c3)
+val linsvcModel = linsvc.fit(trainingData)
+
+//Transformacion del modelo con los datos de test
+val lnsvc_prediction = linsvcModel.transform(testData)
+lnsvc_prediction.select("prediction", "label", "features").show(10)
 
 /*Imprimimos linea de intercepcion*/
 println(s"Coefficients: ${linsvcModel.coefficients} Intercept: ${linsvcModel.intercept}")
 
-val evaluator = new MulticlassClassificationEvaluator().setLabelCol("Survived").setPredictionCol("prediction").setMetricName("accuracy")
+//Mostrar Accuracy
+val evaluator = new MulticlassClassificationEvaluator().setLabelCol("label").setPredictionCol("prediction").setMetricName("accuracy")
 val lnsvc_accuracy = evaluator.evaluate(lnsvc_prediction)
 print("Accuracy of Support Vector Machine is = " + (lnsvc_accuracy))
 print(" and Test Error of Support Vector Machine = " + (1.0 - lnsvc_accuracy))
-
-println(s"Accuracy: $accuracy")
