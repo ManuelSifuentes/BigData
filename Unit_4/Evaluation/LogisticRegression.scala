@@ -1,4 +1,7 @@
 /*Importamos las librerías*/
+
+for(i <- 0 to 30)
+{
 import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.ml.feature.{VectorAssembler, StringIndexer, VectorIndexer}
 import org.apache.spark.ml.linalg.Vectors
@@ -43,8 +46,8 @@ val lrModel = lr.fit(training)
 var results = lrModel.transform(test)
 
 /*Impresión de los coeficientes e intercepciones*/
-println(s"Coefficients: \n${lrModel.coefficientMatrix}")
-println(s"Intercepts: \n${lrModel.interceptVector}")
+// println(s"Coefficients: \n${lrModel.coefficientMatrix}")
+// println(s"Intercepts: \n${lrModel.interceptVector}")
 
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 
@@ -54,4 +57,8 @@ val predictionAndLabels = results.select($"prediction",$"label").as[(Double, Dou
 // Initialize a MulticlassMetrics object
 val metrics = new MulticlassMetrics(predictionAndLabels)
 
-metrics.accuracy
+// metrics.accuracy
+
+println(s"ACCURACY ACCURACY ACCURACY= ${metrics.accuracy}")
+
+}

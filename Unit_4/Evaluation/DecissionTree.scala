@@ -1,5 +1,8 @@
 /*Importamos las librerias necesarias con las que vamos a trabajar*/
 
+for(i <- 0 to 30)
+{
+
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.DateType
 import org.apache.spark.ml.feature.VectorIndexer
@@ -20,8 +23,8 @@ val spark = SparkSession.builder().getOrCreate()
 val df = spark.read.option("header","true").option("inferSchema","true").option("delimiter",";").format("csv").load("bank.csv")
 
 /*Desblegamos los tipos de datos.*/
-df.printSchema()
-df.show(1)
+// df.printSchema()
+// df.show(1)
 
 /*Cambiamos la columna y por una con datos binarios*/
 val change1 = df.withColumn("y",when(col("y").equalTo("yes"),1).otherwise(col("y")))
@@ -29,18 +32,18 @@ val change2 = change1.withColumn("y",when(col("y").equalTo("no"),2).otherwise(co
 val newcolumn = change2.withColumn("y",'y.cast("Int"))
 
 /*Desplegamos la nueva columna*/
-newcolumn.show(1)
+// newcolumn.show(1)
 
 /*Generamos la tabla features*/
 val assembler = new VectorAssembler().setInputCols(Array("balance","day","duration","pdays","previous")).setOutputCol("features")
 val fea = assembler.transform(newcolumn)
 /*Mostramos la nueva columna*/
-fea.show(1)
+// fea.show(1)
 
 /*Cambiamos la columna y a la columna label*/
 val cambio = fea.withColumnRenamed("y", "label")
 val feat = cambio.select("label","features")
-feat.show(1)
+// feat.show(1)
 
 /*DecisionTree*/
 val labelIndexer = new StringIndexer().setInputCol("label").setOutputCol("indexedLabel").fit(feat)
@@ -67,13 +70,15 @@ val model = pipeline.fit(trainingData)
 val predictions = model.transform(testData)
 
 /*Desplegamos predicciones*/
-predictions.select("predictedLabel", "label", "features").show(5)
+// predictions.select("predictedLabel", "label", "features").show(5)
 
 /*Evaluamos la exactitud*/
 val evaluator = new MulticlassClassificationEvaluator().setLabelCol("indexedLabel").setPredictionCol("prediction").setMetricName("accuracy")
 val accuracy = evaluator.evaluate(predictions)
+println(s"ACCURACY ACCURACY ACCURACY= ${accuracy}")
+}
 
-println(s"Test Error = ${(1.0 - accuracy)}")
+// println(s"Test Error = ${(1.0 - accuracy)}")
 
-val treeModel = model.stages(2).asInstanceOf[DecisionTreeClassificationModel]
-println(s"Learned classification tree model:\n ${treeModel.toDebugString}")
+// val treeModel = model.stages(2).asInstanceOf[DecisionTreeClassificationModel]
+// println(s"Learned classification tree model:\n ${treeModel.toDebugString}")
