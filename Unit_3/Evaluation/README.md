@@ -64,13 +64,6 @@ val training_data = assembler.transform(feature_data).select($"features")
 val kmeans = new KMeans().setK(3).setSeed(1L)
 ```
 
-- Result
-
-```r
-WSSSE: Double = 8.095172370767671E10
-Within Set Sum of Squared Errors = 8.095172370767671E10
-```
-
 10.1 Fit that model to the training_data
 
 ```r
@@ -82,6 +75,13 @@ val model = kmeans.fit(training_data)
 ```r
 val WSSSE = model.computeCost(training_data)
 println(s"Within Set Sum of Squared Errors = $WSSSE")
+```
+
+- Result
+
+```r
+WSSSE: Double = 8.095172370767671E10
+Within Set Sum of Squared Errors = 8.095172370767671E10
 ```
 
 11.1 Shows the result
