@@ -71,7 +71,7 @@ WSSSE: Double = 8.095172370767671E10
 Within Set Sum of Squared Errors = 8.095172370767671E10
 ```
 
-10.1 10.1 Fit that model to the training_data
+10.1 Fit that model to the training_data
 
 ```r
 val model = kmeans.fit(training_data)
