@@ -1,63 +1,46 @@
-//1. Load into a dataframe Iris.csv
-val iris_df=spark.read.format("csv").option("header","true").load("iris.csv")
+// Evaluation #03
 
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.functions._
-//import org.apache.spark.sql.types.DoubleType
+// The goal of this practical test is to try to group customers from specific regions of a wholesaler. This based on the sales of some product categories.
 
-val data = iris_df.withColumn("sepal_length", $"sepal_length".cast(DoubleType)).withColumn("sepal_width", $"sepal_width".cast(DoubleType)).withColumn("petal_length", $"petal_length".cast(DoubleType)).withColumn("petal_width", $"petal_width".cast(DoubleType))
+// 1. Import a simple Spark session.
+import org.apache.spark.sql.SparkSession
 
-//2. What are the names of the columns?
-data.columns
+// 2. Use the lines of code to minimize errors
+import org.apache.log4j._
+Logger.getLogger("org").setLevel(Level.ERROR)
 
-//3. What is the scheme like?
-data.printSchema()
+// 3. Create an instance of the Spark session
+val spark = SparkSession.builder().getOrCreate()
 
-//4. Print the first 5 columns.
-data.show(5)
+// 4. Import the Kmeans library for the clustering algorithm.
+import org.apache.spark.ml.clustering.KMeans
 
-//5. Use the describe () method to learn more about the data in the DataFrame.
-data.describe().show()
+// 5. Load the Wholesale Customers Data dataset
+val dataset = spark.read.option("header","true").option("inferSchema","true").format("csv").load("Wholesale customers data.csv")
 
-//6. Make the pertinent transformation for the categorical data which will be our labels to be classified.
+// 6. Select the following columns: Fresh, Milk, Grocery, Frozen, Detergents_Paper, Delicassen and call this set feature_data
+val feature_data = (dataset.select($"Fresh", $"Milk", $"Grocery", $"Frozen", $"Detergents_Paper", $"Delicassen"))
+
+// 7. Import Vector Assembler and Vector
 import org.apache.spark.ml.feature.VectorAssembler
-val assembler = new VectorAssembler().setInputCols(Array("sepal_length", "sepal_width", "petal_length", "petal_width")).setOutputCol("features")
-val features = assembler.transform(data)
-features.show(5)
+import org.apache.spark.ml.linalg.Vectors
 
-import org.apache.spark.ml.feature.StringIndexer
-val labelIndexer = new StringIndexer().setInputCol("species").setOutputCol("indexedLabel").fit(features)
-println(s"Found labels: ${labelIndexer.labels.mkString("[", ", ", "]")}")
+// 8. Create a new Vector Assembler object for the feature columns as a input set, remembering that there are no labels
+val assembler = (new VectorAssembler().setInputCols(Array("Fresh", "Milk", "Grocery", "Frozen", "Detergents_Paper", "Delicassen")).setOutputCol("features"))
 
-import org.apache.spark.ml.feature.VectorIndexer
-val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("indexedFeatures").setMaxCategories(4).fit(features)
+// 9. Use the assembler object to transform feature_data
+val training_data = assembler.transform(feature_data).select($"features")
 
-val splits = features.randomSplit(Array(0.6, 0.4))
-val trainingData = splits(0)
-val testData = splits(1)
+// 10. Create a Kmeans model with K = 3
+val kmeans = new KMeans().setK(3).setSeed(1L)
 
-val layers = Array[Int](4, 5, 5, 3)
+// 10.1 Fit that model to the training_data
+val model = kmeans.fit(training_data)
 
-//7. Build the classification model and explain its architecture.
-import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
-val trainer = new MultilayerPerceptronClassifier().setLayers(layers).setLabelCol("indexedLabel").setFeaturesCol("indexedFeatures").setBlockSize(128).setSeed(System.currentTimeMillis).setMaxIter(200)
+// 11.Evaluate the groups using Within Set Sum of Squared Errors WSSSE and print the centroids.
+val WSSSE = model.computeCost(training_data)
+println(s"Within Set Sum of Squared Errors = $WSSSE")
 
-import org.apache.spark.ml.feature.IndexToString
-val labelConverter = new IndexToString().setInputCol("prediction").setOutputCol("predictedLabel").setLabels(labelIndexer.labels)
-
-import org.apache.spark.ml.Pipeline
-val pipeline = new Pipeline().setStages(Array(labelIndexer, featureIndexer, trainer, labelConverter))
-
-val model = pipeline.fit(trainingData)
-
-//8. Print the model results
-val predictions = model.transform(testData)
-
-predictions.show(5)
-
-import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
-
-val evaluator = new MulticlassClassificationEvaluator().setLabelCol("indexedLabel").setPredictionCol("prediction").setMetricName("accuracy")
-val accuracy = evaluator.evaluate(predictions)
-println("Test Error = " + (1.0 - accuracy))
-
+//11.1 Shows the result.
+println("Cluster Centers: ")
+model.clusterCenters.foreach(println)
