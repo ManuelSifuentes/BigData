@@ -1,5 +1,216 @@
 # Evaluation #04
 
+## Decision Tree
+
+Import libraries
+
+```r
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.types.DateType
+import org.apache.spark.ml.feature.VectorIndexer
+import org.apache.spark.ml.feature.VectorAssembler
+import org.apache.spark.ml.Pipeline
+import org.apache.spark.ml.feature.StringIndexer
+import org.apache.spark.ml.classification.DecisionTreeClassifier
+import org.apache.spark.ml.feature.IndexToString
+import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
+import org.apache.spark.ml.classification.DecisionTreeClassificationModel
+import org.apache.log4j._
+```
+
+Handle errors in code run
+
+```r
+Logger.getLogger("org").setLevel(Level.ERROR)
+```
+
+We create a spark session and load the CSV data into a datraframe
+
+```r
+val spark = SparkSession.builder().getOrCreate()
+val df = spark.read.option("header","true").option("inferSchema","true").option("delimiter",";").format("csv").load("bank.csv")
+```
+
+Display the schema and the first 5 lines
+
+```r
+df.printSchema()
+df.show(5)
+```
+
+Change the columns "y" by one with binary data
+
+```r
+val change1 = df.withColumn("y",when(col("y").equalTo("yes"),1).otherwise(col("y")))
+val change2 = change1.withColumn("y",when(col("y").equalTo("no"),2).otherwise(col("y")))
+val newcolumn = change2.withColumn("y",'y.cast("Int"))
+```
+
+Create a new VectorAssembler object called assembler for the features
+
+```r
+val assembler = new VectorAssembler().setInputCols(Array("balance","day","duration","pdays","previous")).setOutputCol("features")
+val fea = assembler.transform(newcolumn)
+```
+
+Rename column "y" to label
+
+```r
+val cambio = fea.withColumnRenamed("y", "label")
+val feat = cambio.select("label","features")
+```
+
+Declare a new StringIndexer object to rename and index the column label to indexedLabel
+
+```r
+val labelIndexer = new StringIndexer().setInputCol("label").setOutputCol("indexedLabel").fit(feat)
+```
+
+Create a new VectorIndexer object called featureIndexer to index all the data contained in features, creating a new column called indexedFeatures
+
+```r
+val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("indexedFeatures").setMaxCategories(4) 
+```
+
+Divide the data set into training and test arrays
+
+```r
+val Array(trainingData, testData) = feat.randomSplit(Array(0.7, 0.3))
+```
+
+Model instance
+
+```r
+val dt = new DecisionTreeClassifier().setLabelCol("indexedLabel").setFeaturesCol("indexedFeatures")
+```
+
+Convert the indexed data to its original type
+
+```r
+val labelConverter = new IndexToString().setInputCol("prediction").setOutputCol("predictedLabel").setLabels(labelIndexer.labels)
+```
+
+Create a PIpeline object to unite the classification process into a single object
+
+```r
+val pipeline = new Pipeline().setStages(Array(labelIndexer, featureIndexer, dt, labelConverter))
+// AJustar el modelo a los datos de entrenamiento
+val model = pipeline.fit(trainingData)
+```
+
+Perform Classification Prediction with Test Data
+
+```r
+val predictions = model.transform(testData)
+predictions.select("predictedLabel", "label", "features").show(5)
+```
+
+Show model accuracy
+
+```r
+val evaluator = new MulticlassClassificationEvaluator().setLabelCol("indexedLabel").setPredictionCol("prediction").setMetricName("accuracy")
+val accuracy = evaluator.evaluate(predictions)
+println(s"Accuracy = ${accuracy}")
+```
+
+## Logistic Regression
+
+Import libraries
+
+```r
+import org.apache.spark.ml.classification.LogisticRegression
+import org.apache.spark.mllib.evaluation.MulticlassMetrics
+import org.apache.spark.ml.feature.{VectorAssembler, StringIndexer, VectorIndexer}
+import org.apache.spark.ml.linalg.Vectors
+import org.apache.spark.sql.SparkSession
+import org.apache.log4j._
+```
+
+Handle errors in code run
+
+```r
+Logger.getLogger("org").setLevel(Level.ERROR)
+```
+
+We create a spark session and load the CSV data into a datraframe
+
+```r
+val spark = SparkSession.builder().getOrCreate()
+val data  = spark.read.option("header","true").option("inferSchema", "true").option("delimiter",";").format("csv").load("bank.csv")
+```
+
+Change the columns "y" by one with binary data
+
+```r
+val yes = data.withColumn("y",when(col("y").equalTo("yes"),1).otherwise(col("y")))
+val clean = yes.withColumn("y",when(col("y").equalTo("no"),2).otherwise(col("y")))
+val cleanData = clean.withColumn("y",'y.cast("Int"))
+```
+
+Create a new Array with the selected data
+
+```r
+val featureCols = Array("age","previous","balance","duration")
+```
+
+Create a new VectorAssembler object called assembler for the features
+
+```r
+val assembler = new VectorAssembler().setInputCols(featureCols).setOutputCol("features")
+val df2 = assembler.transform(cleanData)
+```
+
+Rename column "y" to label
+
+```r
+val featuresLabel = df2.withColumnRenamed("y", "label")
+val dataI = featuresLabel.select("label","features")
+```
+
+Divide the data set into training and test arrays
+
+```r
+val Array(training, test) = dataI.randomSplit(Array(0.7, 0.3), seed = 12345)
+```
+
+Model instance
+
+```r
+val lr = new LogisticRegression().setMaxIter(10).setRegParam(0.3).setElasticNetParam(0.8)
+```
+
+Fit the model to the training data
+
+```r
+val lrModel = lr.fit(training)
+```
+
+Perform the prediction with the test data
+
+```r
+var results = lrModel.transform(test)
+```
+
+Printing the coefficients and interceptions
+
+```r
+println(s"Coefficients: \n${lrModel.coefficientMatrix}")
+println(s"Intercepts: \n${lrModel.interceptVector}")
+```
+
+Convert the results to RDD using .as and .rdd
+
+```r
+val predictionAndLabels = results.select($"prediction",$"label").as[(Double, Double)].rdd
+```
+
+Show model accuracy
+
+```r
+val metrics = new MulticlassMetrics(predictionAndLabels)
+println(s"Accuracy = ${metrics.accuracy}")
+```
+
 ## SVM
 
 We import the necessary libraries with which we are going to work
