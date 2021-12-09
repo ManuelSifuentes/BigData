@@ -47,7 +47,7 @@ val linsvcModel = linsvc.fit(trainingData)
 
 // Transformation of the model with the test data
 val lnsvc_prediction = linsvcModel.transform(testData)
-// lnsvc_prediction.select("prediction", "label", "features").show(10)
+lnsvc_prediction.select("prediction", "label", "features").show(10)
 
 // Print intercept line
 // println(s"Coefficients: ${linsvcModel.coefficients} Intercept: ${linsvcModel.intercept}")

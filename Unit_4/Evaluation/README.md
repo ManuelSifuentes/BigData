@@ -79,6 +79,7 @@ Transformation of the model with the test data
 
 ```r
 val lnsvc_prediction = linsvcModel.transform(testData)
+lnsvc_prediction.select("prediction", "label", "features").show(10)
 ```
 
 Show Accuracy
@@ -87,6 +88,31 @@ Show Accuracy
 val evaluator = new MulticlassClassificationEvaluator().setLabelCol("label").setPredictionCol("prediction").setMetricName("accuracy")
 val lnsvc_accuracy = evaluator.evaluate(lnsvc_prediction)
 print("Accuracy of Support Vector Machine is = " + (lnsvc_accuracy))
+```
+
+Result:
+
+```r
+lnsvc_prediction: org.apache.spark.sql.DataFrame = [label: int, features: vector ... 2 more fields]
++----------+-----+--------------------+
+|prediction|label|            features|
++----------+-----+--------------------+
+|       1.0|    0|[-3058.0,17.0,882...|
+|       1.0|    0|[-1944.0,7.0,623....|
+|       1.0|    0|[-970.0,4.0,489.0...|
+|       1.0|    0|[-839.0,16.0,1018...|
+|       1.0|    0|[-754.0,9.0,727.0...|
+|       1.0|    0|[-639.0,15.0,585....|
+|       1.0|    0|[-537.0,21.0,1039...|
+|       1.0|    0|[-477.0,21.0,1532...|
+|       1.0|    0|[-468.0,8.0,534.0...|
+|       1.0|    0|[-466.0,15.0,901....|
++----------+-----+--------------------+
+only showing top 10 rows
+
+evaluator: org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator = mcEval_051e12751017
+lnsvc_accuracy: Double = 0.8830457003184949
+Accuracy of Support Vector Machine is = 0.8830457003184949
 ```
 
 ## Decission Tree
