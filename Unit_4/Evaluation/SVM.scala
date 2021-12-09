@@ -1,6 +1,7 @@
-// We import the necessary libraries with which we are going to work
+//Practice SVM
 for(i <- 0 to 30)
 {
+// We import the necessary libraries with which we are going to work
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.DateType
 import org.apache.spark.sql.SparkSession

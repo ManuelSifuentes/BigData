@@ -1,6 +1,8 @@
 //Practice MultilayerPerceptron
 for(i <- 0 to 30)
 {
+
+// We import the necessary libraries with which we are going to work
 import org.apache.spark.sql.types.DateType
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.ml.feature.VectorAssembler
@@ -12,46 +14,46 @@ import org.apache.spark.ml.feature.IndexToString
 import org.apache.spark.ml.Pipeline
 import org.apache.log4j._
 
-//Quita los warnings
+// Remove warnings
 Logger.getLogger("org").setLevel(Level.ERROR)
 
-//Creamos una sesion de spark y cargamos los datos del CSV en un datraframe
+// We create a spark session and load the CSV data into a datraframe
 val spark = SparkSession.builder().getOrCreate()
 val df = spark.read.option("header","true").option("inferSchema","true").option("delimiter",";").format("csv").load("bank.csv")
 
-//Desblegamos los tipos de datos
-df.printSchema()
-//Mostramos primer renglon
-df.show(1)
+// // We display the data types
+// df.printSchema()
+// // We show first line
+// df.show(1)
 
-//Cambiamos la columna "y" por una con datos binarios
+// We change the column "y" for one with binary data
 val df1 = df.withColumn("y",when(col("y").equalTo("yes"),1).otherwise(col("y")))
 val df2 = df1.withColumn("y",when(col("y").equalTo("no"),0).otherwise(col("y")))
 val newcolumn = df2.withColumn("y",'y.cast("Int"))
 
-//Desplegamos la nueva columna
-newcolumn.show(1)
+// // We display the new column
+// newcolumn.show(1)
 
-//Generamos el campo features con VectoAssembler
+// We generate the features field with VectorAssembler
 val assembler = new VectorAssembler().setInputCols(Array("balance","day","duration","pdays","previous")).setOutputCol("features")
 val newDF = assembler.transform(newcolumn)
 
-//Mostramos el campo de features
-newDF.show(1)
+// // We show the features field
+// newDF.show(1)
 
-//Modificamos el campo "y" por label
+// We modify the field "y" by label
 val cambio = newDF.withColumnRenamed("y", "label")
-//Seleccionamos un nuevo df con los campor de 'label' y 'features'
+// We select a new df with the fields of 'label' and 'features'
 val finalDF = cambio.select("label","features")
-finalDF.show(1)
+// finalDF.show(1)
 
-//Cambiamos el label principal con datos caterogicos de string a un Index
+// We change the main label with categorical data from string to an Index
 val labelIndexer = new StringIndexer().setInputCol("label").setOutputCol("indexedLabel").fit(finalDF)
-//val labelIndexer2 = new StringIndexer().setInputCol("job").setOutputCol("indexedLabelJob").fit(newcolumn)
-//Mostramos la categoria de los datos
-println(s"Found labels: ${labelIndexer.labels.mkString("[", ", ", "]")}")
 
-//Nueva variablea para definirle un index a los vectores del campo "features"
+// // We show the category of the data
+// println(s"Found labels: ${labelIndexer.labels.mkString("[", ", ", "]")}")
+
+// New variables to define an index to the vectors of the "features" field
 val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("indexedFeatures").setMaxCategories(2).fit(finalDF)
 
 // Split the data into train and test
@@ -59,31 +61,31 @@ val splits = c3.randomSplit(Array(0.7, 0.3), seed = 1234L)
 val trainingData = splits(0)
 val testData = splits(1)
 
-//Specify layers for the neural network:
-//Input layer of size 5 (features), two intermediate of size 6 and 5 and output of size 2 (classes)
+// Specify layers for the neural network:
+// Input layer of size 5 (features), two intermediate of size 6 and 5 and output of size 2 (classes)
 val layers = Array[Int](5, 6, 5, 2)
 
-//Creamos instancia del metodo de la libreria de clasificacion con el campo de entrada "indexedLabel" y los caracteristicas del campo "indexedFeatures"
+// Create an instance of the classification library method with the input field "indexedLabel" and the characteristics of the field "indexedFeatures"
 val trainer = new MultilayerPerceptronClassifier().setLayers(layers).setLabelCol("indexedLabel").setFeaturesCol("indexedFeatures").setBlockSize(128).setSeed(1234L).setMaxIter(100)
 
-//Para efectos de demostracion se invierte la prediccion a tipo string del label
+// For demonstration purposes, the prediction is inverted to the string type of the label.
 val labelConverter = new IndexToString().setInputCol("prediction").setOutputCol("predictedLabel").setLabels(labelIndexer.labels)
 
-//Juntamos los datos creados para tener un nuevo df con los nuevos campos
+// We join the data created to have a new df with the new fields
 val pipeline = new Pipeline().setStages(Array(labelIndexer, featureIndexer, trainer, labelConverter))
 
-//Cremos modelo con los datos de entramiento
+// Let's create a model with the training data
 val model = pipeline.fit(trainingData)
 
-//Generamos la prediccion con los datos de prueba
+// We generate the prediction with the test data
 val prediction = model.transform(testData)
 prediction.select("prediction", "label", "features").show(5)
 
-//Finalizamos realizado una prueba para conocer el accuracy del modelo y conocer su eficiencia.
+// We finished a test to know the accuracy of the model and its efficiency.
 val evaluator = new MulticlassClassificationEvaluator().setLabelCol("indexedLabel").setPredictionCol("prediction").setMetricName("accuracy")
 val accuracy = evaluator.evaluate(prediction)
 
-//Resultado
+// Result
 print("Accuracy of Support Vector Machine is = " + (accuracy))
 
 }
