@@ -1,4 +1,4 @@
-/*Importamos las librerias necesarias con las que vamos a trabajar*/
+// We import the necessary libraries with which we are going to work
 for(i <- 0 to 30)
 {
 import org.apache.spark.sql.SparkSession
@@ -9,66 +9,51 @@ import org.apache.spark.ml.classification.LinearSVC
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 import org.apache.log4j._
 
-/*Quita los warnings*/
+// Remove warnings
 Logger.getLogger("org").setLevel(Level.ERROR)
 
-/*Creamos una sesion de spark y cargamos los datos del CSV en un datraframe*/
+// We create a spark session and load the CSV data into a datraframe
 val spark = SparkSession.builder().getOrCreate()
 val df = spark.read.option("header","true").option("inferSchema","true").option("delimiter",";").format("csv").load("bank.csv")
 
-/*Desblegamos los tipos de datos.*/
-// df.printSchema()
-// df.show(5)
-
-/*Cambiamos la columna y por una con datos binarios.*/
+// We change the column "y" for one with binary data.
 val change1 = df.withColumn("y",when(col("y").equalTo("yes"),1).otherwise(col("y")))
 val change2 = change1.withColumn("y",when(col("y").equalTo("no"),2).otherwise(col("y")))
 val newcolumn = change2.withColumn("y",'y.cast("Int"))
 
-/*Desplegamos la nueva columna*/
-// newcolumn.show(5)
-
-/*Generamos la tabla features*/
+// We generate the features table
 val assembler = new VectorAssembler().setInputCols(Array("balance","day","duration","pdays","previous")).setOutputCol("features")
 val fea = assembler.transform(newcolumn)
 
-/*Mostramos la nueva columna*/
-// fea.show(1)
-
-/*Cambiamos la columna y a la columna label*/
+// We change the column "y" to the label column
 val cambio = fea.withColumnRenamed("y", "label")
 val feat = cambio.select("label","features")
-// feat.show(5)
 
-/*SVM: Se requiere cambiar los valores categoricos numericos a 0 y 1 respectivamente*/
+// SVM: It is required to change the numerical categorical values to 0 and 1 respectively
 val c1 = feat.withColumn("label",when(col("label").equalTo("1"),0).otherwise(col("label")))
 val c2 = c1.withColumn("label",when(col("label").equalTo("2"),1).otherwise(col("label")))
 val c3 = c2.withColumn("label",'label.cast("Int"))
 
 // c3.show(5)
 
-//The data is prepared for training and the test
+// The data is prepared for training and the test
 val Array(trainingData, testData) = c3.randomSplit(Array(0.7, 0.3))
 
-//Instancia del modelo
-val linsvc = new LinearSVC().setMaxIter(10).setRegParam(0.1)
+// Model instance using the label and features as predominant values
+val linsvc = new LinearSVC().setLabelCol("label").setFeaturesCol("features")
 
-// //Usando como valores predominantes el label y features
-// val linsvc = new LinearSVC().setLabelCol("label").setFeaturesCol("features")
-
-/* Fit del modelo*/
+// Model fit
 val linsvcModel = linsvc.fit(trainingData)
 
-//Transformacion del modelo con los datos de test
+// Transformation of the model with the test data
 val lnsvc_prediction = linsvcModel.transform(testData)
 // lnsvc_prediction.select("prediction", "label", "features").show(10)
 
-/*Imprimimos linea de intercepcion*/
+// Print intercept line
 // println(s"Coefficients: ${linsvcModel.coefficients} Intercept: ${linsvcModel.intercept}")
 
-//Mostrar Accuracy
+// Show Accuracy
 val evaluator = new MulticlassClassificationEvaluator().setLabelCol("label").setPredictionCol("prediction").setMetricName("accuracy")
 val lnsvc_accuracy = evaluator.evaluate(lnsvc_prediction)
 print("Accuracy of Support Vector Machine is = " + (lnsvc_accuracy))
-// print(" and Test Error of Support Vector Machine = " + (1.0 - lnsvc_accuracy))
 }
