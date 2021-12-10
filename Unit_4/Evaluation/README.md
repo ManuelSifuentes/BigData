@@ -69,7 +69,7 @@ val labelIndexer = new StringIndexer().setInputCol("label").setOutputCol("indexe
 Create a new VectorIndexer object called featureIndexer to index all the data contained in features, creating a new column called indexedFeatures
 
 ```r
-val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("indexedFeatures").setMaxCategories(4) 
+val featureIndexer = new VectorIndexer().setInputCol("features").setOutputCol("indexedFeatures").setMaxCategories(4)
 ```
 
 Divide the data set into training and test arrays
@@ -111,6 +111,9 @@ Show model accuracy
 val evaluator = new MulticlassClassificationEvaluator().setLabelCol("indexedLabel").setPredictionCol("prediction").setMetricName("accuracy")
 val accuracy = evaluator.evaluate(predictions)
 println(s"Accuracy = ${accuracy}")
+
+result:
+Accuracy= 0.8925357722377932
 ```
 
 ## Logistic Regression
@@ -209,6 +212,14 @@ Show model accuracy
 ```r
 val metrics = new MulticlassMetrics(predictionAndLabels)
 println(s"Accuracy = ${metrics.accuracy}")
+
+result:
+Coefficients:
+3 x 4 CSCMatrix
+Intercepts:
+[-7.668355241088849,2.8268160217768314,4.841539219312018]
+
+Accuracy= 0.8839272727272727
 ```
 
 ## SVM
@@ -325,10 +336,6 @@ evaluator: org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator = mc
 lnsvc_accuracy: Double = 0.8830457003184949
 Accuracy of Support Vector Machine is = 0.8830457003184949
 ```
-
-## Decission Tree
-
-## Logistic Regression
 
 ## Multilayer Perceptron
 
@@ -471,3 +478,45 @@ only showing top 5 rows
 
 Accuracy of Multilayer Perceptron Classifier is = 0.886684037558685
 ```
+
+### Comparative table of the models
+
+| Iteración     | Decision Tree | Logistic Regression | SVM    | Multilayer Perceptron |
+| ------------- | ------------- | ------------------- | ------ | --------------------- |
+| 1             | 89,09%        | 88,21%              | 88,41% | 88,66%                |
+| 2             | 89,57%        | 88,21%              | 88,09% | 88,66%                |
+| 3             | 89,19%        | 88,21%              | 88,77% | 88,66%                |
+| 4             | 89,47%        | 88,21%              | 88,63% | 88,66%                |
+| 5             | 88,95%        | 88,21%              | 88,46% | 88,66%                |
+| 6             | 89,45%        | 88,21%              | 87,97% | 88,66%                |
+| 7             | 89,36%        | 88,21%              | 88,35% | 88,66%                |
+| 8             | 88,72%        | 88,21%              | 88,37% | 88,66%                |
+| 9             | 88,87%        | 88,21%              | 88,36% | 88,66%                |
+| 10            | 89,15%        | 88,21%              | 87,90% | 88,66%                |
+| 11            | 88,95%        | 88,21%              | 88,40% | 88,66%                |
+| 12            | 89,27%        | 88,21%              | 88,05% | 88,66%                |
+| 13            | 89,09%        | 88,21%              | 88,29% | 88,66%                |
+| 14            | 89,65%        | 88,21%              | 88,51% | 88,66%                |
+| 15            | 89,30%        | 88,21%              | 88,20% | 88,66%                |
+| 16            | 88,73%        | 88,21%              | 88,53% | 88,66%                |
+| 17            | 89,42%        | 88,21%              | 88,29% | 88,66%                |
+| 18            | 89,18%        | 88,21%              | 88,77% | 88,66%                |
+| 19            | 88,89%        | 88,21%              | 88,11% | 88,66%                |
+| 20            | 89,02%        | 88,21%              | 87,97% | 88,66%                |
+| 21            | 89,33%        | 88,21%              | 88,36% | 88,66%                |
+| 22            | 89,50%        | 88,21%              | 87,96% | 88,66%                |
+| 23            | 88,45%        | 88,21%              | 88,41% | 88,66%                |
+| 24            | 89,13%        | 88,21%              | 88,65% | 88,66%                |
+| 25            | 89,00%        | 88,21%              | 88,21% | 88,66%                |
+| 26            | 89,12%        | 88,21%              | 88,63% | 88,66%                |
+| 27            | 89,00%        | 88,21%              | 88,74% | 88,66%                |
+| 28            | 89,20%        | 88,21%              | 88,72% | 88,66%                |
+| 29            | 89,10%        | 88,21%              | 88,38% | 88,66%                |
+| 30            | 89,19%        | 88,21%              | 88,41% | 88,66%                |
+|               |               |                     |        |                       |
+| Tiempo (min): | 3:06          | 1:42                | 6 00   | 6:05                  |
+| Promedio      | 89,14%        | 88,21%              | 88,36% | 88,66%                |
+
+### Explanation of the comparative table of the models
+
+It can be seen that there is a clear time difference between the methods used in practice, with Logistic Regression achieving a difference of approximately one minute and a half compared to Decision Tree, which is the closest method, not being as efficient in precision. achieved as obtained in completion time. It should be noted that the tests were carried out on a solid disk storage, which helps the reading speed to be faster than on a mechanical disk, also affecting that the hardware to be used depended on the specifications given in a virtual machine, the which ran the Linux operating system. Having given context of the environment on which the tests were carried out, and having tested these classification algorithms with a dataset that exceeded 40,000 data, which are closer to a simulated real scenario, it could be said that Logistic Regression would be a candidate. solid to choose as "winner", this if the priority is the speed of processing, sacrificing a little the final precision of the predictions, otherwise, and depending on the work circumstances and the origin of the data, Decission Tree does not remain behind, achieving a higher score in terms of precision. SVM or Multilayer Perceptron should be set aside only to have a longer completion time in the prediction processes, or in terms of their precision, they can give better results depending on the situation in which they are going to be used, the final decision It is in the analysis of the data and the object for which you want to use a certain method, since all have characteristics, advantages and disadvantages that can vary depending on the purpose that you want to achieve with said data predictions.
